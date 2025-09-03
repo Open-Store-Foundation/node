@@ -181,7 +181,7 @@ services:
     command: >
       certonly --webroot --webroot-path=/var/www/certbot 
       --email info@openstore.foundation --agree-tos --no-eff-email 
-      -d openstore.foundation
+      -d api.openstore.foundation
     depends_on:
       - nginx
     profiles:
