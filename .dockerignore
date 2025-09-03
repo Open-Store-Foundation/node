@@ -4,7 +4,7 @@ target/
 .DS_Store
 *.md
 .env*
-deploy/Dockerfile.admin
+tools/deploy/Dockerfile.admin
 .dockerignore
 
 exec/client/tmp/

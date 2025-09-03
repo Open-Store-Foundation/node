@@ -103,12 +103,14 @@ OpenStore provides comprehensive deployment tools and configurations in the `dep
 
 The Docker Compose setup includes:
 
-- **api-client**: REST API server (port 8080)
+- **api-client**: REST API server (internal port 8080)
 - **daemon-client**: Blockchain synchronization daemon
 - **oracle**: External data validation service
 - **validator**: Application artifact validation service
 - **postgres**: PostgreSQL database (port 5432)
 - **redis**: Redis cache (port 6379)
+- **nginx**: Reverse proxy with SSL termination (ports 80/443)
+- **certbot**: SSL certificate management
 - **admin**: Management container with build tools
 
 ### Environment Configuration
@@ -166,6 +168,39 @@ deploy/.shared/
 └── sqlite/
 ```
 
+### SSL/HTTPS Setup
+
+For production deployment with SSL certificates:
+
+1. **Set environment variables**:
+   ```bash
+   export DOMAIN_NAME=api.yourdomain.com
+   export CERTBOT_EMAIL=admin@yourdomain.com
+   ```
+
+2. **Run SSL setup script**:
+   ```bash
+   ./setup-ssl.sh
+   ```
+
+This will:
+- Configure nginx with HTTP-only template initially
+- Obtain SSL certificates via Let's Encrypt
+- Switch to HTTPS configuration
+- Set up automatic certificate renewal
+
+**Manual Template Management:**
+```bash
+# Switch to HTTP-only template
+./nginx-template.sh initial
+
+# Switch to HTTPS template (after SSL setup)
+./nginx-template.sh ssl
+
+# Restart nginx to apply changes
+docker compose restart nginx
+```
+
 ### Production Deployment Process
 
 Follow the deployment workflow in `deploy/DEPLOY.md`:
@@ -176,7 +211,8 @@ Follow the deployment workflow in `deploy/DEPLOY.md`:
 4. Sync repository and generate environment configs
 5. Apply database migrations
 6. Download and deploy service binaries
-7. Restart all services
+7. Configure SSL certificates (if needed)
+8. Restart all services
 
 ### Quick Start
 
@@ -267,9 +303,9 @@ Each service has its own detailed documentation:
 
 ### Deployment Documentation
 Comprehensive deployment guides and tools:
-- [Deployment Guide](deploy/DEPLOY.md) - Production deployment workflow
-- [Environment Configuration](deploy/ENV.md) - Environment variables reference
-- [Docker Compose Setup](deploy/docker-compose.yml) - Multi-service container orchestration
+- [Deployment Guide](tools/deploy/DEPLOY.md) - Production deployment workflow
+- [Environment Configuration](tools/deploy/ENV.md) - Environment variables reference
+- [Docker Compose Setup](tools/deploy/docker-compose.yml) - Multi-service container orchestration
 
 ## License
 

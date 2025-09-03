@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+import shutil
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -53,7 +54,8 @@ class EnvGenerator:
                 # CONTRACTS
                 "ORACLE_ADDRESS": "",
                 # SYNC
-                "CONFIRM_COUNT": ""
+                "CONFIRM_COUNT": "",
+                "TX_POLL_TIMEOUT_MS": ""
             },
             "validator": {
                 # TELEGRAM
@@ -97,39 +99,85 @@ class EnvGenerator:
                 "HISTORICAL_SYNC_THRESHOLD": "",
                 "HISTORICAL_SYNC_BLOCK": "",
                 # DATABASE
-                "DATABASE_URL": "",
-                # SERVICES
-                "REDIS_URL": "",
-                "REDIS_HOST": "localhost",
-                "REDIS_USER": "",
-                "CLIENT_HOST_URL": ""
+                "DATABASE_URL": ""
             },
             "api-client": {
                 # TELEGRAM
                 "TG_TOKEN": "",
                 "TG_INFO_CHAT_ID": "",
                 "TG_ALERT_CHAT_ID": "",
+                # WALLET
+                "WALLET_PK": "",
                 # DATABASE
                 "DATABASE_URL": "",
                 # SERVICES
                 "REDIS_URL": "",
-                "REDIS_HOST": "localhost",
-                "REDIS_USER": "",
                 "CLIENT_HOST_URL": ""
             },
             "postgres": {
                 # POSTGRES
-                "POSTGRES_HOST": "localhost",
+                "POSTGRES_HOST": "postgres",
                 "POSTGRES_DB": "",
                 "POSTGRES_USER": "",
                 "POSTGRES_PASSWORD": ""
+            },
+            "nginx": {
+                # NGINX
+                "DOMAIN_NAME": "",
+                "NGINX_VARIANT": "",
+                "CERTBOT_EMAIL": ""
             }
         }
     
-    def collect_inputs(self, profile: Optional[str] = None) -> Dict[str, str]:
+    def get_service_input_requirements(self, service: str) -> set:
+        template = self.templates.get(service, {})
+        required_inputs = set()
+        
+        for key in template.keys():
+            if key == "WALLET_PK":
+                if service in ["oracle", "validator"]:
+                    required_inputs.add("ADMIN_WALLET_PK")
+                else:
+                    required_inputs.add("USER_WALLET_PK")
+            elif key == "DATABASE_URL":
+                if service == "validator":
+                    required_inputs.add("SQLITE_DB")
+                elif service in ["api-client", "daemon-client"]:
+                    required_inputs.update(["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"])
+            elif key == "REDIS_URL":
+                required_inputs.update(["REDIS_HOST", "REDIS_USER", "REDIS_PASS"])
+            elif key in ["TG_TOKEN", "TG_INFO_CHAT_ID", "TG_ALERT_CHAT_ID"]:
+                required_inputs.update(["TG_TOKEN", "TG_INFO_CHAT_ID", "TG_ALERT_CHAT_ID"])
+            elif key == "ETH_NODE_URL":
+                required_inputs.add("ETH_NODE_URL")
+            elif key == "ETHSCAN_API_KEY":
+                required_inputs.add("ETHSCAN_API_KEY")
+            elif key == "CLIENT_HOST_URL":
+                required_inputs.add("CLIENT_HOST_URL")
+            elif key == "FILE_STORAGE_PATH":
+                required_inputs.add("FILE_STORAGE_PATH")
+            elif key == "DOMAIN_NAME":
+                required_inputs.add("DOMAIN_NAME")
+            elif key == "NGINX_VARIANT":
+                required_inputs.add("NGINX_VARIANT")
+            elif key == "CERTBOT_EMAIL":
+                required_inputs.add("CERTBOT_EMAIL")
+        
+        return required_inputs
+    
+    def collect_inputs(self, profile: Optional[str] = None, service: Optional[str] = None) -> Dict[str, str]:
         inputs = {}
         
         print("=== OpenStore Environment Configuration ===\n")
+        
+        if service:
+            print(f"Configuring for service: {service}")
+            required_inputs = self.get_service_input_requirements(service)
+        else:
+            print("Configuring for all services")
+            required_inputs = set()
+            for svc in self.templates.keys():
+                required_inputs.update(self.get_service_input_requirements(svc))
         
         selected_profile = None
         if profile and profile in self.profiles:
@@ -152,44 +200,93 @@ class EnvGenerator:
                 else:
                     print("Invalid profile. Please choose 'bsctest' or 'localhost'")
         
-        print("\nPrivate Keys:")
-        inputs["ADMIN_WALLET_PK"] = input("Admin Wallet Private Key (for oracle/validator): ").strip()
-        inputs["USER_WALLET_PK"] = input("User Wallet Private Key (for clients): ").strip()
+        if "ADMIN_WALLET_PK" in required_inputs or "USER_WALLET_PK" in required_inputs:
+            print("\nPrivate Keys:")
+            if "ADMIN_WALLET_PK" in required_inputs:
+                inputs["ADMIN_WALLET_PK"] = input("Admin Wallet Private Key (for oracle/validator): ").strip()
+            if "USER_WALLET_PK" in required_inputs:
+                inputs["USER_WALLET_PK"] = input("User Wallet Private Key (for clients): ").strip()
         
-        print("\nTelegram Configuration:")
-        inputs["TG_TOKEN"] = input("Telegram Bot Token: ").strip()
-        inputs["TG_INFO_CHAT_ID"] = input("Telegram Info Chat ID: ").strip()
-        inputs["TG_ALERT_CHAT_ID"] = input("Telegram Alert Chat ID: ").strip()
+        telegram_inputs = {"TG_TOKEN", "TG_INFO_CHAT_ID", "TG_ALERT_CHAT_ID"}
+        if telegram_inputs.intersection(required_inputs):
+            print("\nTelegram Configuration:")
+            if "TG_TOKEN" in required_inputs:
+                inputs["TG_TOKEN"] = input("Telegram Bot Token: ").strip()
+            if "TG_INFO_CHAT_ID" in required_inputs:
+                inputs["TG_INFO_CHAT_ID"] = input("Telegram Info Chat ID: ").strip()
+            if "TG_ALERT_CHAT_ID" in required_inputs:
+                inputs["TG_ALERT_CHAT_ID"] = input("Telegram Alert Chat ID: ").strip()
         
-        print("\nDatabase Configuration:")
-        inputs["POSTGRES_HOST"] = input("PostgreSQL Host (default: localhost): ").strip() or "localhost"
-        inputs["POSTGRES_DB"] = input("PostgreSQL Database Name: ").strip()
-        inputs["POSTGRES_USER"] = input("PostgreSQL Username: ").strip()
-        inputs["POSTGRES_PASSWORD"] = input("PostgreSQL Password: ").strip()
-        inputs["SQLITE_DB"] = input("SQLite Database Name (for validator): ").strip()
+        database_inputs = {"POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "SQLITE_DB"}
+        if database_inputs.intersection(required_inputs):
+            print("\nDatabase Configuration:")
+            if "POSTGRES_HOST" in required_inputs:
+                inputs["POSTGRES_HOST"] = input("PostgreSQL Host (default: postgres): ").strip() or "postgres"
+            if "POSTGRES_DB" in required_inputs:
+                inputs["POSTGRES_DB"] = input("PostgreSQL Database Name: ").strip()
+            if "POSTGRES_USER" in required_inputs:
+                inputs["POSTGRES_USER"] = input("PostgreSQL Username: ").strip()
+            if "POSTGRES_PASSWORD" in required_inputs:
+                inputs["POSTGRES_PASSWORD"] = input("PostgreSQL Password: ").strip()
+            if "SQLITE_DB" in required_inputs:
+                inputs["SQLITE_DB"] = input("SQLite Database Name (for validator): ").strip()
         
-        print("\nRedis Configuration:")
-        inputs["REDIS_HOST"] = input("Redis Host (default: localhost): ").strip() or "localhost"
-        inputs["REDIS_USER"] = input("Redis Username (optional): ").strip()
-        inputs["REDIS_PASS"] = input("Redis Password (optional): ").strip()
+        redis_inputs = {"REDIS_URL"}
+        if redis_inputs.intersection(required_inputs):
+            print("\nRedis Configuration:")
+            if "REDIS_HOST" in required_inputs:
+                inputs["REDIS_HOST"] = input("Redis Host (default: redis): ").strip() or "redis"
+            if "REDIS_USER" in required_inputs:
+                inputs["REDIS_USER"] = input("Redis Username (optional): ").strip()
+            if "REDIS_PASS" in required_inputs:
+                inputs["REDIS_PASS"] = input("Redis Password (optional): ").strip()
         
-        print("\nValidator File Storage:")
-        inputs["FILE_STORAGE_PATH"] = input("FILE_STORAGE_PATH for validator(default './tmp/'): ").strip() or "./tmp/"
+        if "FILE_STORAGE_PATH" in required_inputs:
+            print("\nValidator File Storage:")
+            inputs["FILE_STORAGE_PATH"] = input("FILE_STORAGE_PATH for validator(default './tmp/'): ").strip() or "./tmp/"
         
-        print(f"\nBlockchain Configuration:")
-        inputs["ETH_NODE_URL"] = input("Ethereum Node URL: ").strip()
-        inputs["ETHSCAN_API_KEY"] = input("Etherscan API Key: ").strip()
-        inputs["CLIENT_HOST_URL"] = input("Client Host URL (default: 127.0.0.1:8081): ").strip() or "127.0.0.1:8081"
+        nginx_inputs = {"DOMAIN_NAME", "NGINX_VARIANT", "CERTBOT_EMAIL"}
+        if nginx_inputs.intersection(required_inputs):
+            print("\nNginx Configuration:")
+            if "NGINX_VARIANT" in required_inputs:
+                print("Available nginx variants:")
+                print("  http - HTTP only configuration")
+                print("  https - HTTPS with SSL certificates")
+                print("  none - No nginx configuration files")
+                while True:
+                    variant = input("Select nginx variant (http/https/none): ").strip().lower()
+                    if variant in ["http", "https", "none"]:
+                        inputs["NGINX_VARIANT"] = variant
+                        break
+                    else:
+                        print("Invalid variant. Please choose 'http', 'https', or 'none'")
+                
+                if inputs["NGINX_VARIANT"] != "none" and "DOMAIN_NAME" in required_inputs:
+                    inputs["DOMAIN_NAME"] = input("Domain name (e.g., example.com): ").strip()
+                
+                if inputs["NGINX_VARIANT"] == "https" and "CERTBOT_EMAIL" in required_inputs:
+                    inputs["CERTBOT_EMAIL"] = input("Email for SSL certificates (Let's Encrypt): ").strip()
         
-        print(f"\nProfile defaults (using {selected_profile}):")
-        print(f"CHAIN_ID: {inputs['CHAIN_ID']}")
-        print(f"GF_NODE_URL: {inputs['GF_NODE_URL']}")
-        print(f"Contract addresses: Oracle={inputs['ORACLE_ADDRESS']}, Store={inputs['STORE_ADDRESS']}")
+        blockchain_inputs = {"ETH_NODE_URL", "ETHSCAN_API_KEY", "CLIENT_HOST_URL"}
+        if blockchain_inputs.intersection(required_inputs):
+            print(f"\nBlockchain Configuration:")
+            if "ETH_NODE_URL" in required_inputs:
+                inputs["ETH_NODE_URL"] = input("Ethereum Node URL: ").strip()
+            if "ETHSCAN_API_KEY" in required_inputs:
+                inputs["ETHSCAN_API_KEY"] = input("Etherscan API Key: ").strip()
+            if "CLIENT_HOST_URL" in required_inputs:
+                inputs["CLIENT_HOST_URL"] = input("Client Host URL (default: 127.0.0.1:8080): ").strip() or "127.0.0.1:8080"
         
-        override = input("Override contract addresses? (y/N): ").strip().lower()
-        if override == 'y':
-            inputs["ORACLE_ADDRESS"] = input(f"Oracle Contract Address (current: {inputs['ORACLE_ADDRESS']}): ").strip() or inputs["ORACLE_ADDRESS"]
-            inputs["STORE_ADDRESS"] = input(f"Store Contract Address (current: {inputs['STORE_ADDRESS']}): ").strip() or inputs["STORE_ADDRESS"]
+        if selected_profile and (service is None or any(key in self.templates.get(service, {}) for key in ["ORACLE_ADDRESS", "STORE_ADDRESS"])):
+            print(f"\nProfile defaults (using {selected_profile}):")
+            print(f"CHAIN_ID: {inputs['CHAIN_ID']}")
+            print(f"GF_NODE_URL: {inputs['GF_NODE_URL']}")
+            print(f"Contract addresses: Oracle={inputs['ORACLE_ADDRESS']}, Store={inputs['STORE_ADDRESS']}")
+            
+            override = input("Override contract addresses? (y/N): ").strip().lower()
+            if override == 'y':
+                inputs["ORACLE_ADDRESS"] = input(f"Oracle Contract Address (current: {inputs['ORACLE_ADDRESS']}): ").strip() or inputs["ORACLE_ADDRESS"]
+                inputs["STORE_ADDRESS"] = input(f"Store Contract Address (current: {inputs['STORE_ADDRESS']}): ").strip() or inputs["STORE_ADDRESS"]
         
         return inputs
     
@@ -205,8 +302,9 @@ class EnvGenerator:
             "# CONTRACTS": ["ORACLE_ADDRESS", "STORE_ADDRESS"],
             "# SYNC": ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"],
             "# DATABASE": ["DATABASE_URL"],
-            "# SERVICES": ["REDIS_URL", "REDIS_USER", "CLIENT_HOST_URL", "FILE_STORAGE_PATH"],
-            "# POSTGRES": ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
+            "# SERVICES": ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH"],
+            "# POSTGRES": ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"],
+            "# NGINX": ["DOMAIN_NAME", "CERTBOT_EMAIL"]
         }
         
         # Track which keys have been added
@@ -218,7 +316,8 @@ class EnvGenerator:
             for key in block_keys:
                 if key in template:
                     value = self._resolve_value(key, inputs, template[key], service)
-                    block_vars.append(f"{key}={value}")
+                    if value is not None:
+                        block_vars.append(f"{key}={value}")
                     added_keys.add(key)
             
             if block_vars:
@@ -231,7 +330,8 @@ class EnvGenerator:
         for key, default_value in template.items():
             if key not in added_keys:
                 value = self._resolve_value(key, inputs, default_value, service)
-                remaining_vars.append(f"{key}={value}")
+                if value is not None:
+                    remaining_vars.append(f"{key}={value}")
         
         if remaining_vars:
             content.append("")
@@ -241,6 +341,10 @@ class EnvGenerator:
         return "\n".join(content) + "\n"
     
     def _resolve_value(self, key: str, inputs: Dict[str, str], default: str, service: str = "") -> str:
+        # Skip NGINX_VARIANT for nginx service - it's only used for generation logic
+        if key == "NGINX_VARIANT" and service == "nginx":
+            return None
+            
         if key == "WALLET_PK":
             if service in ["oracle", "validator"]:
                 return inputs.get("ADMIN_WALLET_PK", "")
@@ -294,7 +398,47 @@ class EnvGenerator:
             auth = f"{username}@"
         return f"redis://{auth}{host}:6379/0"
     
+    def create_nginx_config(self, inputs: Dict[str, str]) -> None:
+        nginx_variant = inputs.get("NGINX_VARIANT", "none")
+        domain_name = inputs.get("DOMAIN_NAME", "")
+        
+        nginx_dir = self.config_dir / "nginx"
+        nginx_dir.mkdir(parents=True, exist_ok=True)
+        
+        project_root = Path(__file__).parent.parent.parent
+        source_nginx_dir = project_root / "tools" / "templates" / "nginx"
+        
+        if not source_nginx_dir.exists():
+            print(f"Warning: Nginx templates not found at {source_nginx_dir}")
+            return
+        
+        shutil.copy2(source_nginx_dir / "nginx.conf", nginx_dir / "nginx.conf")
+        print(f"Created {nginx_dir / 'nginx.conf'}")
+        
+        if nginx_variant == "none":
+            print("Nginx variant set to 'none' - no site configuration created")
+            return
+        
+        if nginx_variant == "http":
+            source_template = source_nginx_dir / "templates" / "openstore-initial.conf.template"
+            target_template = nginx_dir / "default.conf.template"
+        elif nginx_variant == "https":
+            source_template = source_nginx_dir / "templates" / "openstore-ssl.conf.template"
+            target_template = nginx_dir / "default.conf.template"
+        else:
+            print(f"Warning: Unknown nginx variant '{nginx_variant}'")
+            return
+        
+        if source_template.exists():
+            shutil.copy2(source_template, target_template)
+            print(f"Created {target_template} (variant: {nginx_variant})")
+        else:
+            print(f"Warning: Template not found at {source_template}")
+    
     def create_service_env(self, service: str, inputs: Dict[str, str]) -> None:
+        if service == "nginx":
+            self.create_nginx_config(inputs)
+            
         service_dir = self.config_dir / service
         service_dir.mkdir(parents=True, exist_ok=True)
         
@@ -358,6 +502,7 @@ Examples:
   python env_generator.py --list-services          # List available services
   python env_generator.py --list-profiles          # List available profiles
   python env_generator.py --service oracle         # Generate for specific service
+  python env_generator.py --service nginx          # Generate nginx config (http/https/none)
   python env_generator.py --config-dir DIR         # Target directory
         """
     )
@@ -387,21 +532,45 @@ Examples:
 
     parser.add_argument(
         "--config-dir",
-        required=True,
         help="Directory where service .env files will be written (e.g., deploy/config)"
     )
     
     args = parser.parse_args()
     
-    generator = EnvGenerator(Path(args.config_dir))
-    
+    # Handle help commands that don't need config-dir
     if args.list_services:
+        # Use a dummy path for help commands
+        generator = EnvGenerator(Path("."))
         generator.list_services()
         return
     
     if args.list_profiles:
+        # Use a dummy path for help commands
+        generator = EnvGenerator(Path("."))
         generator.list_profiles()
         return
+    
+    # For actual generation, config-dir is required
+    config_dir = None
+    if args.config_dir:
+        # Priority 1: Command line argument
+        config_dir = args.config_dir
+    else:
+        # Priority 2: Environment variable
+        env_config_dir = os.environ.get("CONFIG_DIR")
+        if env_config_dir:
+            config_dir = env_config_dir
+            print(f"Using CONFIG_DIR from environment: {config_dir}")
+        else:
+            # Priority 3: Ask user to define
+            print("Error: --config-dir is required for service generation")
+            print("You can either:")
+            print("  1. Use --config-dir argument")
+            print("  2. Set CONFIG_DIR environment variable")
+            parser.print_help()
+            sys.exit(1)
+    
+    generator = EnvGenerator(Path(config_dir))
     
     if args.service:
         if args.service not in generator.templates:
@@ -409,7 +578,7 @@ Examples:
             generator.list_services()
             sys.exit(1)
         
-        inputs = generator.collect_inputs(args.profile)
+        inputs = generator.collect_inputs(args.profile, args.service)
         generator.create_service_env(args.service, inputs)
     else:
         generator.generate_all(profile=args.profile)

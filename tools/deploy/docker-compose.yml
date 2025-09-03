@@ -6,25 +6,24 @@ services:
       dockerfile: Dockerfile.admin
     container_name: openstore-admin
     volumes:
-      - ./../:/app
+      - ./../../:/app
     networks:
       - client
       - oracle
       - validator
-    stdin_open: true
 
   api-client:
     build:
       dockerfile: Dockerfile.service
     container_name: openstore-api-client
 #    command: ["./launch.sh"]
-    working_dir: "./app"
-    ports:
-      - "8080:8080"
+    working_dir: "/app"
+    expose:
+      - "8080"
     volumes:
-      - ./.shared/api-client/:/app
+      - ${VOLUME_DIR}/api-client/:/app
     env_file:
-      - ./.config/api-client/.env
+      - ${CONFIG_DIR}/api-client/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
     restart: unless-stopped
@@ -47,11 +46,11 @@ services:
       dockerfile: Dockerfile.service
     container_name: openstore-daemon-client
     command: ["./launch.sh"]
-    working_dir: "./app"
+    working_dir: "/app"
     volumes:
-      - ./.shared/daemon-client/:/app
+      - ${VOLUME_DIR}/daemon-client/:/app
     env_file:
-      - ./.config/daemon-client/.env
+      - ${CONFIG_DIR}/daemon-client/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
     restart: unless-stopped
@@ -67,11 +66,11 @@ services:
       dockerfile: Dockerfile.service
     container_name: openstore-oracle
     command: ["./launch.sh"]
-    working_dir: "./app"
+    working_dir: "/app"
     volumes:
-      - ./.shared/oracle/:/app
+      - ${VOLUME_DIR}/oracle/:/app
     env_file:
-      - ./.config/oracle/.env
+      - ${CONFIG_DIR}/oracle/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
     restart: unless-stopped
@@ -85,12 +84,12 @@ services:
       dockerfile: Dockerfile.service
     container_name: openstore-validator
     command: ["./launch.sh"]
-    working_dir: "./app"
+    working_dir: "/app"
     volumes:
-      - ./.shared/sqlite/:/app/sqlite
-      - ./.shared/validator/:/app
+      - ${VOLUME_DIR}/sqlite/:/app/sqlite
+      - ${VOLUME_DIR}/validator/:/app
     env_file:
-      - ./.config/validator/.env
+      - ${CONFIG_DIR}/validator/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
     restart: unless-stopped
@@ -105,11 +104,11 @@ services:
     image: postgres:17
     container_name: openstore-postgres
     env_file:
-      - ./.config/postgres/.env
+      - ${CONFIG_DIR}/postgres/.env
     ports:
       - "5432:5432"
     volumes:
-      - ./.shared/postgres:/var/lib/postgresql/data
+      - ${VOLUME_DIR}/postgres:/var/lib/postgresql/data
     networks:
       - client
     restart: unless-stopped
@@ -127,8 +126,8 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./.shared/redis:/redis
-      - ./.config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ${VOLUME_DIR}/redis:/redis
+      - ${CONFIG_DIR}/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - client
     restart: unless-stopped
@@ -138,6 +137,47 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  nginx:
+    image: nginx:alpine
+    container_name: openstore-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${CONFIG_DIR}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${CONFIG_DIR}/nginx:/etc/nginx/templates:ro
+      - ${VOLUME_DIR}/certbot/conf:/etc/letsencrypt:ro
+      - ${VOLUME_DIR}/certbot/www:/var/www/certbot:ro
+      - ${VOLUME_DIR}/nginx/logs:/var/log/nginx
+    env_file:
+      - ${CONFIG_DIR}/nginx/.env
+    environment:
+      - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.template
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+    depends_on:
+      - api-client
+    networks:
+      - client
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  certbot:
+    image: certbot/certbot
+    container_name: openstore-certbot
+    volumes:
+      - ${VOLUME_DIR}/certbot/conf:/etc/letsencrypt
+      - ${VOLUME_DIR}/certbot/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email -d ${DOMAIN_NAME}
+    depends_on:
+      - nginx
+    profiles:
+      - certbot
 
 networks:
   client:

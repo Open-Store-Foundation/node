@@ -53,7 +53,7 @@ The following environment variables are required:
 - `HISTORICAL_SYNC_BLOCK` - Starting block for historical synchronization (default: 0)
 
 ### API Configuration
-- `CLIENT_HOST_URL` - Host URL for the client API (default: 127.0.0.1:8081)
+- `CLIENT_HOST_URL` - Host URL for the client API (default: 127.0.0.1:8080)
 
 ### Database Configuration
 - `DATABASE_URL` - PostgreSQL database connection URL
