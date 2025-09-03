@@ -18,7 +18,7 @@ services:
       dockerfile: Dockerfile.service
     container_name: openstore-api-client
 #    command: ["./launch.sh"]
-    working_dir: "./app"
+    working_dir: "/app"
     ports:
       - "8080:8080"
     volumes:
@@ -47,7 +47,7 @@ services:
       dockerfile: Dockerfile.service
     container_name: openstore-daemon-client
     command: ["./launch.sh"]
-    working_dir: "./app"
+    working_dir: "/app"
     volumes:
       - ./.shared/daemon-client/:/app
     env_file:
@@ -67,7 +67,7 @@ services:
       dockerfile: Dockerfile.service
     container_name: openstore-oracle
     command: ["./launch.sh"]
-    working_dir: "./app"
+    working_dir: "/app"
     volumes:
       - ./.shared/oracle/:/app
     env_file:
@@ -85,7 +85,7 @@ services:
       dockerfile: Dockerfile.service
     container_name: openstore-validator
     command: ["./launch.sh"]
-    working_dir: "./app"
+    working_dir: "/app"
     volumes:
       - ./.shared/sqlite/:/app/sqlite
       - ./.shared/validator/:/app
