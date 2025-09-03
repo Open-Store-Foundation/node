@@ -1,0 +1,108 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                is_os_verified, is_hidden,\n                price, obj.id, rating, downloads, assetlink_sync.domain as website\n            FROM obj\n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n             \n            WHERE build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.version_code = publishing.version_code\n            AND platform_id = $1\n--             AND type_id = $2\n            \n            ORDER BY downloads DESC\n            LIMIT $2 OFFSET $3\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "package_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "logo",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "type_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "category_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "platform_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_os_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_hidden",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "price",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 11,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 12,
+        "name": "rating",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 13,
+        "name": "downloads",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 14,
+        "name": "website",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "904becb251721c120152af4653fbfe9f5ee352f6f1dd6f30671327b9428121f4"
+}

@@ -1,0 +1,98 @@
+use sqlx::PgPool;
+use db_psql::client::PgClient;
+use crate::data::id::{ReqTypeId, TrackId};
+use crate::data::models::BuildRequest;
+use crate::result::ClientResult;
+
+#[derive(Clone)]
+pub struct ValidationRepo {
+    client: PgClient,
+}
+
+impl ValidationRepo {
+
+    pub fn new(client: PgClient) -> Self {
+        Self { client }
+    }
+
+    pub fn pool(&self) -> &PgPool {
+        self.client.pool()
+    }
+    
+    pub async fn get_requests_by_address(
+        &self,
+        address: String,
+    ) -> ClientResult<Vec<BuildRequest>> {
+        let rows = sqlx::query!(
+        r#"
+            SELECT
+                id,
+                request_type_id,
+                object_address,
+                track_id,
+                status,
+                version_code,
+                owner_version
+
+            FROM build_request
+                
+            WHERE object_address = $1 AND status = -1;
+            "#,
+            address
+        )
+            .fetch_all(self.pool())
+            .await?;
+
+        let build_requests = rows
+            .into_iter()
+            .map(|row| {
+                BuildRequest {
+                    id: row.id,
+                    request_type_id: ReqTypeId::from(row.request_type_id),
+                    track_id: TrackId::from(row.track_id),
+                    owner_version: row.owner_version as u64,
+                    object_address: row.object_address,
+                    status: row.status,
+                    version_code: row.version_code,
+                }
+            })
+            .collect();
+
+        Ok(build_requests)
+    }
+
+    pub async fn insert_or_update(&self, new_req: &BuildRequest) -> ClientResult<()> {
+        let req_type_id: i32 = new_req.request_type_id.clone().into();
+        let track_id: i32 = new_req.track_id.clone().into();
+        sqlx::query_as!(
+            BuildRequest,
+            r#"
+            INSERT INTO build_request (
+                id,
+                request_type_id,
+                object_address,
+                track_id,
+                status,
+                version_code,
+                owner_version
+            )
+            
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            
+            ON CONFLICT (id) DO UPDATE SET
+                status = EXCLUDED.status
+            "#,
+            new_req.id,
+            req_type_id,
+            new_req.object_address,
+            track_id,
+            new_req.status,
+            new_req.version_code,
+            new_req.owner_version as i64
+        )
+            .execute(self.pool())
+            .await?;
+
+        return Ok(())
+    }
+}

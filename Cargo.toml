@@ -1,0 +1,115 @@
+[workspace]
+resolver = "2"
+members = [
+    "exec/client",
+    "exec/stat",
+    "exec/oracle",
+    "exec/validator",
+
+    "data/service/sc",
+    "data/service/ethscan",
+
+    "data/cloud/gf",
+
+    "data/client/tg",
+
+    "data/db/psql",
+    "data/db/kf",
+    "data/db/ch",
+    "data/db/redis",
+    "data/db/sqlite",
+
+    "net/client",
+    "net/result",
+
+    "core/log",
+    "core/std",
+    "core/actor",
+
+    "codegen/block",
+    "codegen/contracts",
+    "codegen/stat",
+]
+
+[workspace.dependencies]
+codegen_contracts = { path = "codegen/contracts", version = "0.1.0" }
+codegen_stat = { path = "codegen/stat", version = "0.1.0" }
+codegen_block = { path = "codegen/block", version = "0.1.0" }
+
+core_log = { path = "core/log", version = "0.1.0" }
+core_std = { path = "core/std", version = "0.1.0" }
+core_actor = { path = "core/actor", version = "0.1.0" }
+
+net_client = { path = "net/client", version = "0.1.0" }
+net_result = { path = "net/result", version = "0.1.0" }
+
+service_sc = { path = "data/service/sc", version = "0.1.0" }
+service_ethscan = { path = "data/service/ethscan", version = "0.1.0" }
+
+client_tg = { path = "data/client/tg", version = "0.1.0" }
+
+cloud_gf = { path = "data/cloud/gf", version = "0.1.0" }
+
+db_psql = { path = "data/db/psql", version = "0.1.0" }
+db_kf = { path = "data/db/kf", version = "0.1.0" }
+db_ch = { path = "data/db/ch", version = "0.1.0" }
+db_redis = { path = "data/db/redis", version = "0.1.0" }
+db_sqlite = { path = "data/db/sqlite", version = "0.1.0" }
+
+lazy_static = "1.4.0"
+chrono = { version = "0.4", features = ["serde"] }
+once_cell = "1.19.0"
+
+# Logger
+derive_more = { version = "2.0.1", features = ["debug", "display", "try_from"] }
+thiserror = "2.0.12"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Net
+reqwest = { version = "0.12.9", features = ["json", "blocking"] }
+url = "2.5.0"
+tower = { version = "0.5", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["full"] }
+axum = { version = "0.8.3" }
+headers = { version = "0.4.0" }
+
+# Serialization
+serde = { version = "1.0.195", features = ["default", "derive"] }
+serde_json = "1.0.111"
+prost = "0.13"
+byteorder = "1.5.0"
+bytes = "1.9.0"
+dotenvy = "0.15.7"
+
+# Async / Concurency
+tokio = { version = "1.29.1", features = ["full"] }
+futures = "0.3.31"
+futures-util = "0.3.31"
+dashmap = "6.1.0"
+async-trait = "0.1.77"
+
+# Crypto
+base64 = { version = "0.22.1", features = ["default"] }
+openssl = { version = "0.10.41", features = ["vendored"] }
+hex = { version = "0.4.3" }
+secp256k1 = { version = "0.30.0", features = ["default"] }
+blake3 = { version = "1.8.1" }
+ring = "0.17.8"
+
+# DBs
+clickhouse = { version = "0.13.2", features = ["inserter"] }
+rdkafka = { version = "0.37.0", features = ["tracing", "tokio"] }
+redis = { version = "0.29.5", features = ["tokio-comp"] }
+sqlx = { version = "0.8.4", features = ["runtime-tokio-rustls", "postgres", "sqlite", "macros", "chrono", "uuid"] }
+#moka = { version = "0.12.10",  features = ["default", "future"] } TODO Use for cache
+
+# Web3
+alloy = { version = "1.0.24", features = ["full", "json-rpc", "transports", "sol-types"] }
+alloy-network = "1.0.24"
+alloy-chains = "0.2.0"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

@@ -1,0 +1,25 @@
+[package]
+name = "service_sc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+core_std = { workspace = true }
+net_client = { workspace = true }
+codegen_contracts = { workspace = true }
+
+tracing = { workspace = true }
+url = { workspace = true }
+lazy_static = { workspace = true }
+derive_more = { workspace = true }
+
+secp256k1 = { workspace = true }
+hex = { workspace = true }
+alloy = { workspace = true } # keccak256 only
+
+reqwest = { workspace = true }
+prost = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+

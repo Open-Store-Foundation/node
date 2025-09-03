@@ -1,0 +1,11 @@
+[package]
+name = "db_sqlite"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tracing.workspace = true
+prost.workspace = true
+tokio.workspace = true
+sqlx.workspace = true
+

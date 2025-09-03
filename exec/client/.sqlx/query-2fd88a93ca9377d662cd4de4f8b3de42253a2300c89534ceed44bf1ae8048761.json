@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT set_address as \"address!\"\n            \n            FROM UNNEST($1::VARCHAR(100)[]) AS input(set_address)\n            LEFT JOIN obj ON obj.address = input.set_address\n            WHERE obj IS NULL\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "address!",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "VarcharArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "2fd88a93ca9377d662cd4de4f8b3de42253a2300c89534ceed44bf1ae8048761"
+}

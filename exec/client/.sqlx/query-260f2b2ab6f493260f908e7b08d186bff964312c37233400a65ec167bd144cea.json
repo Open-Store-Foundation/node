@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO transactions_batch (\n                from_block_number, to_block_number, status\n            )\n            \n            VALUES ($1, $2, $3)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "260f2b2ab6f493260f908e7b08d186bff964312c37233400a65ec167bd144cea"
+}

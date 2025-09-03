@@ -1,0 +1,22 @@
+FROM rust:1.89.0-slim
+
+RUN apt-get update && apt-get install -y \
+    git \
+    pkg-config \
+    libssl-dev \
+    libpq-dev \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres,sqlite
+
+RUN useradd -m -u 1001 admin
+
+WORKDIR /app
+
+RUN chown -R admin:admin /app
+
+USER admin
+
+EXPOSE 8080

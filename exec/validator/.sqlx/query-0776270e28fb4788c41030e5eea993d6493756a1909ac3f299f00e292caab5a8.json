@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT request_id FROM val_req ORDER BY request_id DESC LIMIT 1;",
+  "describe": {
+    "columns": [
+      {
+        "name": "request_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0776270e28fb4788c41030e5eea993d6493756a1909ac3f299f00e292caab5a8"
+}

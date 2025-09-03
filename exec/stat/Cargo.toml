@@ -1,0 +1,42 @@
+[package]
+name = "stat"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+codegen_stat = { workspace = true }
+net_result = { workspace = true }
+core_log = { workspace = true }
+core_std = { workspace = true }
+db_kf = { workspace = true }
+db_ch = { workspace = true }
+
+# Utils
+dotenvy.workspace = true
+chrono.workspace = true
+derive_more.workspace = true
+
+# Logger
+thiserror.workspace = true
+tracing.workspace = true
+
+# Net
+url.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+axum.workspace = true
+
+# Serialization
+prost.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+# Async / Concurency
+tokio.workspace = true
+futures.workspace = true
+async-trait.workspace = true
+
+# DBs
+rdkafka.workspace = true
+clickhouse.workspace = true
+

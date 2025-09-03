@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package block;
+
+message ValidationProofs {
+  uint64 sb_from = 1;
+  uint64 cd_from = 2;
+  uint64 eocd_from = 3;
+}
+
+message ValidationResult {
+  uint64 request_id = 1;
+  uint32 request_type = 2;
+  
+  int32 artifact_protocol = 3;
+  string artifact_ref_id = 4;
+  
+  string object_address = 5;
+  int64 object_version = 6;
+  
+  uint64 owner_version = 7;
+  
+  uint32 track_id = 8;
+  
+  string file_hash_algorithm = 9;
+  string file_hash = 10;
+  
+  ValidationProofs proofs = 11;
+  
+  uint32 status = 12;
+}
+
+message ValidationBlock {
+  uint64 id = 1;
+  uint64 version = 2;
+  uint64 from_app_req_id = 3;
+  uint64 to_app_req_id = 4;
+  string requests_hash = 6;
+  repeated ValidationResult requests = 7;
+}

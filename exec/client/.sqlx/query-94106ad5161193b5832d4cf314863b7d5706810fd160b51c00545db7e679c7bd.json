@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                input.set_address as \"address!\",\n                input.set_version as \"version!\"\n            \n            FROM UNNEST($1::varchar(100)[], $2::bigint[]) AS input(set_address, set_version)\n                \n            LEFT JOIN artifact ON artifact.object_address = input.set_address\n                AND artifact.version_code = input.set_version\n            \n            WHERE artifact IS NULL\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "address!",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "version!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "94106ad5161193b5832d4cf314863b7d5706810fd160b51c00545db7e679c7bd"
+}

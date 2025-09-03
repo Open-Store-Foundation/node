@@ -1,0 +1,9 @@
+[package]
+name = "db_ch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clickhouse = { workspace = true }
+tracing.workspace = true
+

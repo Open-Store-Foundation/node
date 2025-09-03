@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS category;
+DROP TABLE IF EXISTS review;
+DROP TABLE IF EXISTS report;
+DROP TABLE IF EXISTS achievement;
+DROP TABLE IF EXISTS build_request;
+DROP TABLE IF EXISTS publishing;
+DROP TABLE IF EXISTS assetlink_sync;
+DROP TABLE IF EXISTS artifact;
+DROP TABLE IF EXISTS obj;
+DROP TABLE IF EXISTS transactions_batch;

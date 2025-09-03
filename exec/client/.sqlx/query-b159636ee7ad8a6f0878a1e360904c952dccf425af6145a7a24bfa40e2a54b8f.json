@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": " SELECT id, type_id, name FROM category ORDER BY name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "type_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b159636ee7ad8a6f0878a1e360904c952dccf425af6145a7a24bfa40e2a54b8f"
+}

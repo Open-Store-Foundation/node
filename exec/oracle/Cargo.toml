@@ -1,0 +1,46 @@
+[package]
+name = "oracle"
+version = "0.1.0"
+edition = "2021"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+strip = true
+lto = true
+codegen-units = 1
+
+[dependencies]
+core_log = { workspace = true }
+core_std = { workspace = true }
+core_actor = { workspace = true }
+service_sc = { workspace = true }
+client_tg = { workspace = true }
+net_client = { workspace = true }
+
+# Utils
+dotenvy.workspace = true
+url.workspace = true
+
+# Logger
+derive_more.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Async / Concurency
+tokio.workspace = true
+async-trait.workspace = true
+
+# Crypto
+base64.workspace = true
+openssl.workspace = true
+hex.workspace = true
+
+# Web3
+alloy.workspace = true

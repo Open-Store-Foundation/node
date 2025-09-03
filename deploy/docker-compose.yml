@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  admin:
+    build:
+      dockerfile: Dockerfile.admin
+    container_name: openstore-admin
+    volumes:
+      - ./../:/app
+    networks:
+      - client
+      - oracle
+      - validator
+    stdin_open: true
+
+  api-client:
+    build:
+      dockerfile: Dockerfile.service
+    container_name: openstore-api-client
+#    command: ["./launch.sh"]
+    working_dir: "./app"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./.shared/api-client/:/app
+    env_file:
+      - ./.config/api-client/.env
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - client
+    stdin_open: true
+    tty: true
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 40s
+
+  daemon-client:
+    build:
+      dockerfile: Dockerfile.service
+    container_name: openstore-daemon-client
+    command: ["./launch.sh"]
+    working_dir: "./app"
+    volumes:
+      - ./.shared/daemon-client/:/app
+    env_file:
+      - ./.config/daemon-client/.env
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - client
+    stdin_open: true
+    tty: true
+
+  oracle:
+    build:
+      dockerfile: Dockerfile.service
+    container_name: openstore-oracle
+    command: ["./launch.sh"]
+    working_dir: "./app"
+    volumes:
+      - ./.shared/oracle/:/app
+    env_file:
+      - ./.config/oracle/.env
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+    restart: unless-stopped
+    networks:
+      - oracle
+    stdin_open: true
+    tty: true
+
+  validator:
+    build:
+      dockerfile: Dockerfile.service
+    container_name: openstore-validator
+    command: ["./launch.sh"]
+    working_dir: "./app"
+    volumes:
+      - ./.shared/sqlite/:/app/sqlite
+      - ./.shared/validator/:/app
+    env_file:
+      - ./.config/validator/.env
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - validator
+    stdin_open: true
+    tty: true
+
+  postgres:
+    image: postgres:17
+    container_name: openstore-postgres
+    env_file:
+      - ./.config/postgres/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.shared/postgres:/var/lib/postgresql/data
+    networks:
+      - client
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: openstore-redis
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./.shared/redis:/redis
+      - ./.config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - client
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  client:
+    driver: bridge
+  oracle:
+    driver: bridge
+  validator:
+    driver: bridge

@@ -1,0 +1,72 @@
+[package]
+name = "validator"
+version = "0.1.0"
+edition = "2021"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+strip = true
+lto = true
+codegen-units = 1
+#panic = "abort"
+
+[dependencies]
+net_client = { workspace = true }
+
+client_tg = { workspace = true }
+
+core_log = { workspace = true }
+core_actor = { workspace = true }
+core_std = { workspace = true }
+
+codegen_contracts = { workspace = true }
+codegen_block = { workspace = true }
+
+cloud_gf = { workspace = true }
+
+service_sc = { workspace = true }
+
+db_sqlite = { workspace = true }
+
+# Utils
+chrono.workspace = true
+dotenvy.workspace = true
+
+# Db
+sqlx = { workspace = true }
+
+# Logger
+derive_more.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Net
+headers.workspace = true
+reqwest.workspace = true
+#reqwest-middleware.workspace = true
+#reqwest-retry.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+bytes.workspace = true
+prost.workspace = true
+
+# Async / Concurency
+tokio.workspace = true
+dashmap.workspace = true
+async-trait.workspace = true
+
+# Crypto
+base64.workspace = true
+openssl.workspace = true
+blake3.workspace = true
+hex.workspace = true
+ring.workspace = true
+
+# Web3
+alloy.workspace = true

@@ -1,0 +1,9 @@
+[package]
+name = "db_kf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rdkafka = { workspace = true }
+tracing = { workspace = true }
+

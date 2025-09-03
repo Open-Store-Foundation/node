@@ -1,0 +1,80 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "api-client"
+path = "src/bin/api_main.rs"
+
+[[bin]]
+name = "daemon-client"
+path = "src/bin/daemon_main.rs"
+
+[dependencies]
+net_result = { workspace = true }
+net_client = { workspace = true }
+
+codegen_contracts = { workspace = true }
+codegen_block = { workspace = true }
+
+core_log = { workspace = true }
+core_actor = { workspace = true }
+core_std = { workspace = true }
+
+service_sc = { workspace = true }
+service_ethscan = { workspace = true }
+
+db_redis = { workspace = true }
+db_psql = { workspace = true }
+db_ch = { workspace = true }
+
+cloud_gf = { workspace = true } # TODO v2 daemon only
+
+# Utils
+chrono.workspace = true
+dotenvy.workspace = true
+lazy_static = { workspace = true }
+
+# Logger
+derive_more.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Net
+tower.workspace = true
+tower-http.workspace = true
+axum.workspace = true
+headers.workspace = true
+reqwest.workspace = true
+#reqwest-middleware.workspace = true
+#reqwest-retry.workspace = true
+
+# Clients
+client_tg = { workspace = true }
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+bytes.workspace = true
+prost.workspace = true
+
+# Async / Concurency
+tokio.workspace = true
+async-trait.workspace = true
+once_cell.workspace = true
+
+# Crypto
+base64.workspace = true
+openssl.workspace = true
+blake3.workspace = true
+hex.workspace = true
+
+# Web3
+alloy.workspace = true
+
+# DBs
+sqlx.workspace = true
+clickhouse.workspace = true
+#moka.workspace = true

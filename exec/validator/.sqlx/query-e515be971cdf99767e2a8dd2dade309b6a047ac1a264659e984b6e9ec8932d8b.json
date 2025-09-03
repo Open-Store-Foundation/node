@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE val_block SET state = $1 WHERE block_id = $2;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "e515be971cdf99767e2a8dd2dade309b6a047ac1a264659e984b6e9ec8932d8b"
+}

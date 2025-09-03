@@ -1,0 +1,15 @@
+target/
+.git/
+.gitignore
+.DS_Store
+*.md
+.env*
+deploy/Dockerfile.admin
+.dockerignore
+
+exec/client/tmp/
+exec/validator/tmp/
+exec/validator/exec/
+
+*.log
+*.db

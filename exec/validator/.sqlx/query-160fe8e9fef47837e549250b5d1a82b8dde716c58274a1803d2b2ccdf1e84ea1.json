@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT request_id, proto FROM val_req WHERE request_id == $1 LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "request_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "proto",
+        "ordinal": 1,
+        "type_info": "Blob"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "160fe8e9fef47837e549250b5d1a82b8dde716c58274a1803d2b2ccdf1e84ea1"
+}

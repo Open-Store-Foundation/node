@@ -1,0 +1,13 @@
+[package]
+name = "core_actor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+core_log = { workspace = true }
+
+tokio.workspace = true
+async-trait.workspace = true
+dashmap.workspace = true
+tracing.workspace = true
+derive_more.workspace = true

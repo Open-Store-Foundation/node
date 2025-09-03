@@ -1,0 +1,87 @@
+name: Build and Release Binaries
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  SQLX_OFFLINE: true
+
+jobs:
+  build:
+    name: Build Release Binaries
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: 1.89.0
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libssl-dev
+
+    - name: Build release binaries
+      env:
+        SQLX_OFFLINE: true
+      run: ./tools/build_release.sh
+
+    - name: Prepare artifacts
+      run: |
+        mkdir -p artifacts
+        
+        cp target/release/daemon-client artifacts/
+        cp target/release/api-client artifacts/
+        cp target/release/validator artifacts/
+        cp target/release/oracle artifacts/
+        
+        chmod +x artifacts/daemon-client
+        chmod +x artifacts/api-client
+        chmod +x artifacts/validator
+        chmod +x artifacts/oracle
+        
+        ls -la artifacts/
+        file artifacts/*
+
+    - name: Get tag name
+      id: tag
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create GitHub Release and Upload Binaries
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG_NAME="${{ steps.tag.outputs.tag }}"
+        
+        # Create release
+        gh release create "$TAG_NAME" \
+          --title "Release $TAG_NAME" \
+          --notes "Release $TAG_NAME
+
+        Built binaries:
+        - daemon-client
+        - api-client  
+        - validator
+        - oracle" \
+          --latest \
+          artifacts/daemon-client \
+          artifacts/api-client \
+          artifacts/validator \
+          artifacts/oracle
+
+
+
+

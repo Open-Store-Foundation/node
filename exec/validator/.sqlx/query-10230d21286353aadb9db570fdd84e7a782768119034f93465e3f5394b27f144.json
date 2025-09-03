@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                DELETE FROM val_block;\n                DELETE FROM val_req;\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "10230d21286353aadb9db570fdd84e7a782768119034f93465e3f5394b27f144"
+}

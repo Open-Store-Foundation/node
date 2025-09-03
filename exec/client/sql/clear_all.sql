@@ -1,0 +1,10 @@
+DELETE FROM achievement;
+DELETE FROM artifact;
+DELETE FROM assetlink_sync;
+DELETE FROM build_request;
+DELETE FROM category;
+DELETE FROM obj;
+DELETE FROM publishing;
+DELETE FROM report;
+DELETE FROM review;
+DELETE FROM transactions_batch;

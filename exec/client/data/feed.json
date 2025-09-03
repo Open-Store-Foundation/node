@@ -1,0 +1,216 @@
+{
+  "data": {
+    "sections": [
+      {
+        "type": "banner",
+        "covers": [
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg"
+        ],
+        "objects": [
+          {
+            "id": 0,
+            "name": "Open Store - Be, Love, Work",
+            "packageName": "org.openstore.example.android",
+            "address": "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+
+            "website": "openstore.com",
+            "logo": "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg",
+            "description": "Introducing ChatGPT for Android: OpenAI’s latest advancements at your fingertips. This official app is free, syncs your history across devices, and brings you the latest from OpenAI, including the new image generator.",
+
+            "categoryId": 1,
+            "platformId": 1,
+            "typeId": 1,
+
+            "isOsVerified": false,
+            "rating": 4.21,
+            "price": 0,
+            "downloads": 100000
+          }
+        ]
+      },
+      {
+        "type": "v_list",
+        "objects": [
+          {
+            "id": 1,
+            "name": "App Example One",
+            "packageName": "org.openstore.example.android.app1",
+            "address": "0xAAAAAAAAAAAAAAAaaaaaaaaaaaaaaaaaaaaa",
+            "website": "app1.example.com",
+            "logo": "https://play-lh.googleusercontent.com/lmG9HlI0awHie0cyBieWXeNjpyXvHPwDBb8MNOVIyp0P8VEh95AiBHtUZSDVR3HLe3A=w480-h960-rw",
+            "description": "First app in the vertical list.",
+            "categoryId": 1,
+            "platformId": 1,
+            "typeId": 1,
+            "isOsVerified": false,
+            "rating": 4.10,
+            "price": 0,
+            "downloads": 50000
+          },
+          {
+            "id": 2,
+            "name": "App Example Two (Music)",
+            "packageName": "org.openstore.example.android.app2",
+            "address": "0xBBBBBBBBBBBBBBBbbbbbbbbbbbbbbbbbbbb",
+            "website": "app2.example.com",
+            "logo": "https://play-lh.googleusercontent.com/Ui_-OW6UJI147ySDX9guWWDiCPSq1vtxoC-xG17BU2FpU0Fi6qkWwuLdpddmT9fqrA=w480-h960-rw",
+            "description": "Second app, focused on music.",
+            "categoryId": 2,
+            "platformId": 1,
+            "typeId": 1,
+            "isOsVerified": false,
+            "rating": 4.55,
+            "price": 199,
+            "downloads": 25000
+          },
+          {
+            "id": 3,
+            "name": "Business Tool App",
+            "packageName": "org.openstore.example.android.app3",
+            "address": "0xCCCCCCCCCCCCCCCCcccccccccccccccccccc",
+            "website": "app3.example.com",
+            "logo": "https://play-lh.googleusercontent.com/Nz5sdWyh7jn4eTy_GSaRBDgaKhLC1pvYywC6fklDOlPGbopmeFN9NkqgKGjsvJMbKVEI=w480-h960-rw",
+            "description": "Third app, a business utility.",
+            "categoryId": 3,
+            "platformId": 1,
+            "typeId": 1,
+            "isOsVerified": false,
+            "rating": 3.90,
+            "price": 0,
+            "downloads": 10000
+          }
+        ],
+        "title": {
+          "type": "top_chart"
+        }
+      },
+      {
+        "type": "categories",
+        "categories": [1,2,3],
+        "title": {
+          "type": "popular_in_category"
+        }
+      },
+      {
+        "type": "header",
+        "title": {
+          "type": "best_in_categories"
+        }
+      },
+      {
+        "type": "highlight",
+        "covers": [
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg",
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg"
+        ],
+        "target": {
+          "id": 5,
+          "name": "Featured News App",
+          "packageName": "org.openstore.example.android.newsfeat",
+          "address": "0xDDDDDDDDDDDDDDdddddddddddddddddddd",
+          "website": "newsfeature.com",
+          "logo": "https://play-lh.googleusercontent.com/cpBOIqHqOJNwoPL9aRvlDVjKmNdEzHMMbu4tLXKZgoyQgWO4nwEbPBkM2i_Cy-9_S9g=w480-h960-rw",
+          "description": "A highlighted application for news readers.",
+          "categoryId": 1,
+          "platformId": 1,
+          "typeId": 1,
+          "isOsVerified": true,
+          "rating": 4.80,
+          "price": 0,
+          "downloads": 500000
+        }
+      },
+      {
+        "type": "highlight",
+        "covers": [
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg",
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg"
+        ],
+        "target": {
+          "id": 7,
+          "name": "Indie Music Streamer",
+          "packageName": "org.openstore.example.android.musicindie",
+          "address": "0xEEEEEEEEEEEEEEEEeeeeeeeeeeeeeeeeeeee",
+          "website": "indiemusic.io",
+          "logo": "https://play-lh.googleusercontent.com/q0Sk9ckxrsLuBUQtKrP-Qp8GbUIbsXaZ2OOvRHBqV5y7ySNMAmq_Z5L7-F75GjPJquiD=s512-rw",
+          "description": "Discover new indie artists.",
+          "categoryId": 2,
+          "platformId": 1,
+          "typeId": 1,
+          "isOsVerified": false,
+          "rating": 4.30,
+          "price": 0,
+          "downloads": 75000
+        }
+      },
+      {
+        "type": "highlight",
+        "covers": [
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg",
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg"
+        ],
+        "target": {
+          "id": 8,
+          "name": "Startup Business Suite",
+          "packageName": "org.openstore.example.android.bizsuite",
+          "address": "0x111111111111111111111111111111111111",
+          "website": "bizsuite.app",
+          "logo": "https://play-lh.googleusercontent.com/B9YOy-OE7lpzz7qaUQV3LBJ1Ss-DOBsySrjFeNSl0kWYCQHGFO4uc_xrgyiGDYFZ4SM=s512-rw",
+          "description": "Tools for the modern startup.",
+          "categoryId": 3,
+          "platformId": 1,
+          "typeId": 1,
+          "isOsVerified": false,
+          "rating": 4.00,
+          "price": 4999,
+          "downloads": 5000
+        }
+      },
+      {
+        "type": "h_list",
+        "covers": [
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg",
+          "https://thumbs.dreamstime.com/b/vector-logo-colorful-design-41236752.jpg"
+        ],
+        "objects": [
+          {
+            "id": 6,
+            "name": "Another Great News App",
+            "packageName": "org.openstore.example.android.newsplus",
+            "address": "0x222222222222222222222222222222222222",
+            "website": "newsplus.org",
+            "logo": "https://play-lh.googleusercontent.com/ynzziGfmYSMe4TjtQ98tn0LSLnb3xdQJKdXM-foaH2Iv0-eBXJWkQEXejQjbIvXG0g=s512-rw",
+            "description": "Yet another highly rated news application.",
+            "categoryId": 1,
+            "platformId": 1,
+            "typeId": 1,
+            "isOsVerified": false,
+            "rating": 4.75,
+            "price": 0,
+            "downloads": 250000
+          },
+          {
+            "id": 2,
+            "name": "App Example Two (Music)",
+            "packageName": "org.openstore.example.android.app2",
+            "address": "0xBBBBBBBBBBBBBBBbbbbbbbbbbbbbbbbbbbb",
+            "website": "app2.example.com",
+            "logo": "https://play-lh.googleusercontent.com/Ui_-OW6UJI147ySDX9guWWDiCPSq1vtxoC-xG17BU2FpU0Fi6qkWwuLdpddmT9fqrA=w480-h960-rw",
+            "description": "Second app, focused on music.",
+            "categoryId": 2,
+            "platformId": 1,
+            "typeId": 1,
+            "isOsVerified": false,
+            "rating": 4.55,
+            "price": 199,
+            "downloads": 25000
+          }
+        ],
+        "title": {
+          "type": "best_in_category",
+          "categoryId": 8
+        }
+      }
+    ]
+  }
+}

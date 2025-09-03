@@ -1,0 +1,3 @@
+
+pub const SHA256_EMPTY: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+pub const MS_AUTH_OFFSET: i64 = 10 * 60;
