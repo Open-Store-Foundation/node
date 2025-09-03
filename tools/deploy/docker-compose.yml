@@ -11,6 +11,7 @@ services:
       - client
       - oracle
       - validator
+    stdin_open: true
 
   api-client:
     build:
