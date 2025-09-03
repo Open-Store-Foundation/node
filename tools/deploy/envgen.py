@@ -264,7 +264,7 @@ class EnvGenerator:
                 if inputs["NGINX_VARIANT"] != "none" and "DOMAIN_NAME" in required_inputs:
                     inputs["DOMAIN_NAME"] = input("Domain name (e.g., example.com): ").strip()
                 
-                if inputs["NGINX_VARIANT"] == "https" and "CERTBOT_EMAIL" in required_inputs:
+                if inputs["NGINX_VARIANT"] in ["http", "https"] and "CERTBOT_EMAIL" in required_inputs:
                     inputs["CERTBOT_EMAIL"] = input("Email for SSL certificates (Let's Encrypt): ").strip()
         
         blockchain_inputs = {"ETH_NODE_URL", "ETHSCAN_API_KEY", "CLIENT_HOST_URL"}

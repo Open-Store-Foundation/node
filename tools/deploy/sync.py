@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import shutil
 import stat
@@ -120,23 +121,64 @@ nohup ./{} >/dev/null 2>&1 &
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Sync OpenStore service binaries and create launch scripts",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python3 sync.py                                    # Interactive mode
+  python3 sync.py --volume-dir /path/to/volume      # Specify volume directory
+  python3 sync.py --repo-url https://github.com/... # Use custom repository
+  
+Environment Variables:
+  VOLUME_DIR    - Default volume directory (skips prompt if set)
+        """
+    )
+    
+    parser.add_argument(
+        "--volume-dir",
+        help="Volume directory path for storing binaries and data"
+    )
+    
+    parser.add_argument(
+        "--repo-url",
+        help="Repository URL for downloading binaries (default: https://github.com/Open-Store-Foundation/node)"
+    )
+    
+    args = parser.parse_args()
+    
     repo_root = Path(__file__).resolve().parents[1]
     default_volume = (Path(__file__).resolve().parent / ".shared").resolve()
     
-    repo_url = prompt("Repository URL (default: https://github.com/Open-Store-Foundation/node): ", "https://github.com/Open-Store-Foundation/node")
-    
-    # Priority: 1. Interactive input, 2. Environment variable, 3. Default
-    volume_input = prompt("Volume directory path (default: ./.shared): ", "")
-    if volume_input:
-        volume_root = Path(volume_input).resolve()
+    # Determine repository URL - Priority: 1. Argument, 2. Interactive prompt
+    if args.repo_url:
+        repo_url = args.repo_url
     else:
-        # Check environment variable
+        repo_url = prompt("Repository URL (default: https://github.com/Open-Store-Foundation/node): ", "https://github.com/Open-Store-Foundation/node")
+    
+    # Determine volume directory - Priority: 1. Argument, 2. Environment variable, 3. Error
+    volume_dir = None
+    if args.volume_dir:
+        # Priority 1: Command line argument
+        volume_dir = args.volume_dir
+        volume_root = Path(volume_dir).resolve()
+        print(f"Using volume directory from argument: {volume_root}")
+    else:
+        # Priority 2: Environment variable
         env_volume = os.environ.get("VOLUME_DIR")
         if env_volume:
-            volume_root = Path(env_volume).resolve()
+            volume_dir = env_volume
+            volume_root = Path(volume_dir).resolve()
             print(f"Using VOLUME_DIR from environment: {volume_root}")
         else:
-            volume_root = default_volume
+            # Priority 3: Show error and exit
+            print("Error: --volume-dir is required for sync operation")
+            print("You can either:")
+            print("  1. Use --volume-dir argument")
+            print("  2. Set VOLUME_DIR environment variable")
+            parser.print_help()
+            exit(1)
+    
     ensure_dir(volume_root)
     ensure_service_dirs(volume_root)
 

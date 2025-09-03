@@ -170,6 +170,8 @@ services:
   certbot:
     image: certbot/certbot
     container_name: openstore-certbot
+    env_file:
+      - ${CONFIG_DIR}/nginx/.env
     volumes:
       - ${VOLUME_DIR}/certbot/conf:/etc/letsencrypt
       - ${VOLUME_DIR}/certbot/www:/var/www/certbot
