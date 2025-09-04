@@ -1,0 +1,7 @@
+
+1. Setup envgen.py with http profile nginx specify API $DOMAIN_NAME and $CERTBOT_EMAIL
+2. docker compose up -d nginx
+3. docker compose --profile certbot run --rm certbot
+4. Setup envgen.py with --service=nginx and https profile
+5. docker compose restart nginx
+6. echo "0 12 * * * cd $(pwd) && DOMAIN_NAME=$DOMAIN_NAME docker compose --profile certbot run --rm certbot renew && DOMAIN_NAME=$DOMAIN_NAME docker compose restart nginx" | crontab -

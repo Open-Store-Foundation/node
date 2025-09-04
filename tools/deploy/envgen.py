@@ -179,26 +179,34 @@ class EnvGenerator:
             for svc in self.templates.keys():
                 required_inputs.update(self.get_service_input_requirements(svc))
         
+        # Check if service needs profile-specific configuration
+        profile_dependent_keys = {"CHAIN_ID", "ORACLE_ADDRESS", "STORE_ADDRESS", "HISTORICAL_SYNC_BLOCK", 
+                                "HISTORICAL_SYNC_THRESHOLD", "CONFIRM_COUNT", "GF_NODE_URL", "TX_POLL_TIMEOUT_MS"}
+        needs_profile = bool(required_inputs.intersection(profile_dependent_keys))
+        
         selected_profile = None
-        if profile and profile in self.profiles:
-            inputs.update(self.profiles[profile])
-            selected_profile = profile
-            print(f"Using {profile} profile defaults...")
+        if needs_profile:
+            if profile and profile in self.profiles:
+                inputs.update(self.profiles[profile])
+                selected_profile = profile
+                print(f"Using {profile} profile defaults...")
+            else:
+                print("Deployment Profile:")
+                print("Available profiles:")
+                print("  bsctest - BSC Testnet configuration")
+                print("  localhost - Local development configuration")
+                
+                while True:
+                    chosen = input("Select profile (bsctest/localhost): ").strip().lower()
+                    if chosen in self.profiles:
+                        inputs.update(self.profiles[chosen])
+                        selected_profile = chosen
+                        print(f"Using {chosen} profile defaults...")
+                        break
+                    else:
+                        print("Invalid profile. Please choose 'bsctest' or 'localhost'")
         else:
-            print("Deployment Profile:")
-            print("Available profiles:")
-            print("  bsctest - BSC Testnet configuration")
-            print("  localhost - Local development configuration")
-            
-            while True:
-                chosen = input("Select profile (bsctest/localhost): ").strip().lower()
-                if chosen in self.profiles:
-                    inputs.update(self.profiles[chosen])
-                    selected_profile = chosen
-                    print(f"Using {chosen} profile defaults...")
-                    break
-                else:
-                    print("Invalid profile. Please choose 'bsctest' or 'localhost'")
+            print("Service doesn't require blockchain profile configuration.")
         
         if "ADMIN_WALLET_PK" in required_inputs or "USER_WALLET_PK" in required_inputs:
             print("\nPrivate Keys:")
