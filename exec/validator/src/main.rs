@@ -40,6 +40,7 @@ use std::time::Duration;
 use tokio::signal;
 use tokio::time::sleep;
 use tracing::{info, warn};
+use core_std::shutdown::shutdown_signal;
 
 mod android;
 mod env;
@@ -300,7 +301,7 @@ async fn main() {
     let e_queue = queue.clone();
     tokio::spawn(async move {
         tokio::select! {
-            _ = signal::ctrl_c() => {
+            _ = shutdown_signal() => {
                 warn!("Shutdown validator queue");
                 e_queue.push_sequential(ValidatorEvent::Unregister)
                     .await;

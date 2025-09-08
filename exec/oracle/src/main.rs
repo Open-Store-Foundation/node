@@ -24,6 +24,7 @@ use tokio::signal;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
 use tracing::warn;
+use core_std::shutdown::shutdown_signal;
 
 mod launcher;
 mod result;
@@ -86,7 +87,7 @@ async fn main() {
     let e_oracle = queue.clone();
     tokio::spawn(async move {
         tokio::select! {
-            _ = signal::ctrl_c() => {
+            _ = shutdown_signal() => {
                 warn!("Shutdown oracle queue!");
                 e_oracle.async_shutdown()
                     .await;

@@ -36,6 +36,7 @@ use std::time::Duration;
 use tokio::signal;
 use tokio::time::sleep;
 use tracing::{error, info, warn};
+use core_std::shutdown::shutdown_signal;
 
 #[tokio::main]
 async fn main() {
@@ -168,7 +169,7 @@ async fn main() {
     let e_queue = queue.clone();
     tokio::spawn(async move {
         tokio::select! {
-            _ = signal::ctrl_c() => {
+            () = shutdown_signal() => {
                 warn!("Shutdown validator queue");
                 e_queue.push_sequential(DaemonAction::Shutdown)
                     .await;

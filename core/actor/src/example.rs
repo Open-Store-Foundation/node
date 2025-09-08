@@ -134,7 +134,7 @@ mod actor_example {
         let e_queue = queue.clone();
         tokio::spawn(async move {
             tokio::select! {
-            _ = signal::ctrl_c() => {
+            () = signal::ctrl_c() => {
                 warn!("Shutdown validator queue");
                 e_queue.push_sequential(ExampleAction::Shutdown)
                     .await;

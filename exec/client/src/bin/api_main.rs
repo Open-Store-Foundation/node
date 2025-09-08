@@ -28,6 +28,7 @@ use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
 use core_log::init_tracer;
+use core_std::shutdown::shutdown_signal;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -97,8 +98,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind(addr)
         .await?;
 
-    axum::serve(listener, app.into_make_service())
-        .await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .expect("Failed to start server");
 
     return Ok(())
 }

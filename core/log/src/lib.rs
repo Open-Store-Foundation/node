@@ -1,6 +1,7 @@
 pub mod env;
 
 use std::io::stdout;
+use std::path::{Path, PathBuf};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{
     filter::LevelFilter,
@@ -56,12 +57,17 @@ pub fn init_tracer() -> LogGuard {
             
             // TODO to env
             let logfile = FileRotate::new(
-                log_path,
+                log_path.clone(),
                 AppendCount::new(10),
                 ContentLimit::Bytes(10 * 1024 * 1024), // 25MB
                 Compression::None,
                 None,
             );
+
+            let path = Path::new(&log_path);
+            if !path.exists() {
+                panic!("Wasn't able to create log file");
+            }
 
             let (non_blocking_writer, guard) = tracing_appender::non_blocking(logfile);
 
