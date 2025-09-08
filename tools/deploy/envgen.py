@@ -8,9 +8,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 class EnvGenerator:
-    def __init__(self, config_dir: Path, volume_dir: Optional[str] = None):
+    def __init__(self, config_dir: Path):
         self.config_dir = config_dir
-        self.volume_dir = volume_dir
         self.templates = self._define_templates()
         self.profiles = self._define_profiles()
     
@@ -154,9 +153,7 @@ class EnvGenerator:
                 # NGINX
                 "DOMAIN_NAME": "",
                 "NGINX_VARIANT": "",
-                "CERTBOT_EMAIL": "",
-                # SERVICES
-                "LOG_PATH": ""
+                "CERTBOT_EMAIL": ""
             }
         }
     
@@ -294,6 +291,19 @@ class EnvGenerator:
             print("\nValidator File Storage:")
             inputs["FILE_STORAGE_PATH"] = input("FILE_STORAGE_PATH for validator(default './tmp/'): ").strip() or "./tmp/"
         
+        # Ask for log dir base when logging is used by any selected service template
+        needs_logging = False
+        if service:
+            needs_logging = "LOG_PATH" in self.templates.get(service, {})
+        else:
+            for svc in self.templates.keys():
+                if "LOG_PATH" in self.templates[svc]:
+                    needs_logging = True
+                    break
+        if needs_logging and ("LOG_DIR" not in inputs):
+            print("\nLogging:")
+            inputs["LOG_DIR"] = input("Base LOG_DIR (default './log'): ").strip() or "./log"
+        
         nginx_inputs = {"DOMAIN_NAME", "NGINX_VARIANT", "CERTBOT_EMAIL"}
         if any(k in required_inputs and k not in inputs for k in nginx_inputs):
             print("\nNginx Configuration:")
@@ -350,7 +360,7 @@ class EnvGenerator:
                     ("# SYNC", ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"]),
                     ("# DATABASE", ["DATABASE_URL"]),
                     ("# POSTGRES", ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]),
-                    ("# SERVICES", ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_PATH"]),
+                    ("# SERVICES", ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_DIR", "LOG_PATH"]),
                     ("# NGINX", ["NGINX_VARIANT", "DOMAIN_NAME", "CERTBOT_EMAIL"]),
                 ]
                 written: set = set()
@@ -442,7 +452,7 @@ class EnvGenerator:
             "DATABASE_URL": lambda: self._build_database_url(inputs, service, default),
             "REDIS_URL": lambda: self._build_redis_url(inputs),
             "TX_POLL_TIMEOUT_MS": lambda: inputs.get("TX_POLL_TIMEOUT_MS", default),
-            "LOG_PATH": lambda: (f"{self.volume_dir}/{service}/log/app.log" if self.volume_dir else default),
+            "LOG_PATH": lambda: f"{inputs.get('LOG_DIR', './log').rstrip('/')}/{service}.log" if 'LOG_DIR' in inputs or default == "" else default,
         }
         
         resolver = mappings.get(key)
@@ -626,10 +636,7 @@ Examples:
         help="Directory where service .env files will be written (e.g., deploy/config)"
     )
     
-    parser.add_argument(
-        "--volume-dir",
-        help="Host volume directory to compute LOG_PATHs (fallback to VOLUME_DIR env)"
-    )
+    # Removed --volume-dir: LOG_PATH is internal with default ./log/app.log
     
     parser.add_argument(
         "--input",
@@ -676,23 +683,7 @@ Examples:
             parser.print_help()
             sys.exit(1)
     
-    # Resolve volume_dir - Priority: 1. Argument, 2. Environment variable
-    volume_dir = None
-    if args.volume_dir:
-        volume_dir = args.volume_dir
-    else:
-        env_volume = os.environ.get("VOLUME_DIR")
-        if env_volume:
-            volume_dir = env_volume
-            print(f"Using VOLUME_DIR from environment: {volume_dir}")
-    if not volume_dir:
-        print("Error: --volume-dir is required to compute LOG_PATH values")
-        print("You can either:")
-        print("  1. Use --volume-dir argument")
-        print("  2. Set VOLUME_DIR environment variable")
-        sys.exit(1)
-    
-    generator = EnvGenerator(Path(config_dir), volume_dir)
+    generator = EnvGenerator(Path(config_dir))
     
     if args.service:
         if args.service not in generator.templates:
