@@ -9,48 +9,62 @@ A Python CLI tool for generating `.env` configuration files for OpenStore deploy
 - Service-specific environment templates
 - Wallet private key mapping (admin vs user)
 - PostgreSQL and Redis URL construction
+- Nginx configuration generation (HTTP/HTTPS/none variants)
+- Redis configuration file generation
+- SSL certificate management integration
 
 ## Usage
 
 ### Interactive Mode (Recommended)
 
 ```bash
-cd tools
-python3 env_generator.py
+cd tools/deploy
+python3 envgen.py --config-dir /path/to/config
 ```
 
 This will:
 1. Prompt to select deployment profile (bsctest/localhost)
 2. Prompt for all required configuration values
 3. Generate `.env` files for all services
-4. Place them in `deploy/config/{service}/.env`
+4. Generate nginx configuration files (if nginx service selected)
+5. Generate redis configuration file
+6. Place them in the specified config directory structure
 
 ### Use Specific Profile
 
 ```bash
 # BSC Testnet profile
-python3 env_generator.py --profile bsctest
+python3 envgen.py --profile bsctest --config-dir /path/to/config
 
 # Localhost development profile  
-python3 env_generator.py --profile localhost
+python3 envgen.py --profile localhost --config-dir /path/to/config
 ```
 
 ### List Available Services
 
 ```bash
-python3 env_generator.py --list-services
+python3 envgen.py --list-services
 ```
 
 ### List Available Profiles
 
 ```bash
-python3 env_generator.py --list-profiles
+python3 envgen.py --list-profiles
 ```
 
 ### Generate for Specific Service
 
 ```bash
-python3 env_generator.py --service oracle --profile bsctest
+python3 envgen.py --service oracle --profile bsctest --config-dir /path/to/config
+python3 envgen.py --service nginx --config-dir /path/to/config  # Special nginx configuration
+```
+
+### Using Environment Variables
+
+```bash
+# Set CONFIG_DIR environment variable to skip --config-dir argument
+export CONFIG_DIR=/path/to/config
+python3 envgen.py --profile bsctest
 ```
 
 ## Configuration Inputs
@@ -70,14 +84,26 @@ python3 env_generator.py --service oracle --profile bsctest
 - **POSTGRES_PASSWORD**: PostgreSQL password
 
 ### Redis
+- **REDIS_HOST**: Redis host (default: redis)
+- **REDIS_USER**: Redis username (optional)
 - **REDIS_PASS**: Redis password (optional)
 
 ### Blockchain
-- **ETH_NODE_URL**: Ethereum node URL (leave empty for BSC testnet)
+- **ETH_NODE_URL**: Ethereum node URL
+- **ETHSCAN_API_KEY**: Etherscan API key
+- **CLIENT_HOST_URL**: Client host URL (default: 127.0.0.1:8080)
 - **CHAIN_ID**: Blockchain chain ID
 - **ORACLE_ADDRESS**: Oracle contract address
 - **STORE_ADDRESS**: Store contract address
 - **HISTORICAL_SYNC_BLOCK**: Starting block for historical sync
+
+### Nginx Configuration
+- **DOMAIN_NAME**: Your domain name (e.g., example.com)
+- **NGINX_VARIANT**: Configuration type (http/https/none)
+- **CERTBOT_EMAIL**: Email for SSL certificates (Let's Encrypt)
+
+### File Storage
+- **FILE_STORAGE_PATH**: Validator file storage path (default: ./tmp/)
 
 ## Deployment Profiles
 
@@ -134,18 +160,30 @@ The tool generates `.env` files for:
 - **daemon-client**: Client daemon configuration
 - **api-client**: API client configuration
 - **postgres**: PostgreSQL database configuration
+- **nginx**: Nginx reverse proxy configuration
+
+Additional configuration files generated:
+- **redis.conf**: Redis server configuration
+- **nginx.conf**: Main nginx configuration
+- **default.conf.template**: Nginx site template (HTTP/HTTPS variants)
 
 ## File Structure
 
 After running, your configuration will be organized as:
 
 ```
-deploy/config/
+config/
 ├── oracle/.env
 ├── validator/.env
 ├── daemon-client/.env
 ├── api-client/.env
-└── postgres/.env
+├── postgres/.env
+├── nginx/
+│   ├── .env
+│   ├── nginx.conf
+│   └── default.conf.template
+└── redis/
+    └── redis.conf
 ```
 
 ## Environment Variables Reference
@@ -198,9 +236,10 @@ POSTGRES_PASSWORD=...
 
 **Oracle Service**: Telegram, Blockchain, Wallet, Contracts, Sync  
 **Validator Service**: Telegram, Blockchain, Wallet, Contracts, Sync, Database (SQLite), Services  
-**Daemon Client**: Telegram, Blockchain, Wallet, Contracts, Sync, Database (PostgreSQL), Services  
-**API Client**: Telegram, Database (PostgreSQL), Services  
-**PostgreSQL Database**: Postgres block only
+**Daemon Client**: Telegram, Blockchain, Wallet, Contracts, Sync, Database (PostgreSQL)  
+**API Client**: Telegram, Wallet, Database (PostgreSQL), Services  
+**PostgreSQL Database**: Postgres block only  
+**Nginx Service**: Nginx block only (DOMAIN_NAME, CERTBOT_EMAIL)
 
 ## Requirements
 
@@ -211,19 +250,26 @@ POSTGRES_PASSWORD=...
 
 ### Quick Start with BSC Testnet
 ```bash
-python3 env_generator.py --profile bsctest
-# Fill in your private keys and other required values
+python3 envgen.py --profile bsctest --config-dir ./config
 ```
 
 ### Local Development
 ```bash
-python3 env_generator.py --profile localhost
-# Configure for local blockchain development
+python3 envgen.py --profile localhost --config-dir ./config
 ```
 
 ### Interactive Mode
 ```bash
-python3 env_generator.py
-# Choose profile interactively
-# Customize all settings as needed
+python3 envgen.py --config-dir ./config
+```
+
+### SSL Setup with Nginx
+```bash
+# 1. Generate HTTP configuration first
+python3 envgen.py --service nginx --config-dir ./config
+# Select "http" variant, provide domain and email
+
+# 2. After obtaining SSL certificate, switch to HTTPS
+python3 envgen.py --service nginx --config-dir ./config
+# Select "https" variant
 ```

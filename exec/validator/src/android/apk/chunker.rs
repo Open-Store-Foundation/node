@@ -215,7 +215,7 @@ impl ApkChunker {
 
 #[tokio::test]
 async fn test() {
-    init_tracer();
+    let _guard = init_tracer();
     let checker = ApkChunker::default();
     assert!(true); // Add meaningful test cases
 }

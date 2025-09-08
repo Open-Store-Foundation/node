@@ -41,7 +41,7 @@ use tracing::{error, info, warn};
 async fn main() {
     info!("Starting daemon!");
     dotenv().ok();
-    core_log::init_tracer();
+    let _guard = core_log::init_tracer();
 
     if !is_debug() {
         let settings = TgClientSettings {

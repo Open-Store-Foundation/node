@@ -4,9 +4,10 @@ services:
   admin:
     build:
       dockerfile: Dockerfile.admin
-    container_name: openstore-admin
+    container_name: osadm
+    working_dir: /home
     volumes:
-      - ./../../:/home/app
+      - ./../../:/home
       - ${VOLUME_DIR}:/home/volume
       - ${CONFIG_DIR}:/home/config
     networks:
@@ -18,9 +19,10 @@ services:
   api-client:
     build:
       dockerfile: Dockerfile.service
-    container_name: openstore-api-client
-#    command: ["./launch.sh"]
+    container_name: osa
+    command: ["./api-client"]
     working_dir: "/app"
+    stop_grace_period: 2m
     expose:
       - "8080"
     volumes:
@@ -30,26 +32,24 @@ services:
     environment:
       - RUST_LOG=${RUST_LOG:-info}
     restart: unless-stopped
-    depends_on:
-      - postgres
-      - redis
     networks:
       - client
     stdin_open: true
     tty: true
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 3
-#      start_period: 40s
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-f", "http://$${CLIENT_HOST_URL}/v1/health"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 40s
 
   daemon-client:
     build:
       dockerfile: Dockerfile.service
-    container_name: openstore-daemon-client
-    command: ["./launch.sh"]
+    container_name: osd
+    command: ["./daemon-client"]
     working_dir: "/app"
+    stop_grace_period: 2m
     volumes:
       - ${VOLUME_DIR}/daemon-client/:/app
     env_file:
@@ -57,8 +57,6 @@ services:
     environment:
       - RUST_LOG=${RUST_LOG:-info}
     restart: unless-stopped
-    depends_on:
-      - postgres
     networks:
       - client
     stdin_open: true
@@ -67,9 +65,10 @@ services:
   oracle:
     build:
       dockerfile: Dockerfile.service
-    container_name: openstore-oracle
-    command: ["./launch.sh"]
+    container_name: oso
+    command: ["./oracle"]
     working_dir: "/app"
+    stop_grace_period: 5m
     volumes:
       - ${VOLUME_DIR}/oracle/:/app
     env_file:
@@ -85,9 +84,10 @@ services:
   validator:
     build:
       dockerfile: Dockerfile.service
-    container_name: openstore-validator
-    command: ["./launch.sh"]
+    container_name: osv
+    command: ["./validator"]
     working_dir: "/app"
+    stop_grace_period: 5m
     volumes:
       - ${VOLUME_DIR}/sqlite/:/app/sqlite
       - ${VOLUME_DIR}/validator/:/app
@@ -96,8 +96,6 @@ services:
     environment:
       - RUST_LOG=${RUST_LOG:-info}
     restart: unless-stopped
-    depends_on:
-      - postgres
     networks:
       - validator
     stdin_open: true
@@ -105,7 +103,8 @@ services:
 
   postgres:
     image: postgres:17
-    container_name: openstore-postgres
+    container_name: osp
+    stop_grace_period: 1m
     env_file:
       - ${CONFIG_DIR}/postgres/.env
     ports:
@@ -124,7 +123,8 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: openstore-redis
+    container_name: osr
+    stop_grace_period: 30s
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "6379:6379"
@@ -143,7 +143,7 @@ services:
 
   nginx:
     image: nginx:mainline-alpine3.22
-    container_name: openstore-nginx
+    container_name: osn
     ports:
       - "80:80"
       - "443:443"
@@ -152,7 +152,7 @@ services:
       - ${CONFIG_DIR}/nginx:/etc/nginx/templates:ro
       - ${VOLUME_DIR}/certbot/conf:/etc/letsencrypt:ro
       - ${VOLUME_DIR}/certbot/www:/var/www/certbot:ro
-      - ${VOLUME_DIR}/nginx/logs:/var/log/nginx
+      - ${VOLUME_DIR}/nginx/log:/var/log/nginx
     env_file:
       - ${CONFIG_DIR}/nginx/.env
     environment:
@@ -172,7 +172,7 @@ services:
 
   certbot:
     image: certbot/certbot:v5.0.0
-    container_name: openstore-certbot
+    container_name: osc
     env_file:
       - ${CONFIG_DIR}/nginx/.env
     volumes:

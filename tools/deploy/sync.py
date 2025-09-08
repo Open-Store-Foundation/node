@@ -33,6 +33,15 @@ def ensure_sqlite_file(shared_root: Path, db_name: str) -> Path:
     db_path = sqlite_dir / f"{db_name}.db"
     if not db_path.exists():
         db_path.touch()
+    
+    try:
+        os.chmod(db_path, 0o777)
+        print(f"✓ Set 777 permissions on SQLite database: {db_path}")
+    except PermissionError:
+        print(f"⚠️  Warning: Could not set 777 permissions on {db_path} - insufficient permissions")
+    except Exception as e:
+        print(f"⚠️  Warning: Failed to set permissions on {db_path}: {e}")
+    
     return db_path
 
 
@@ -99,11 +108,12 @@ def download_direct_binaries(shared_root: Path, version: str, repo_url: str) -> 
 def ensure_service_dirs(shared_root: Path) -> None:
     for service in SERVICE_BINARIES.keys():
         ensure_dir(shared_root / service)
+        ensure_dir(shared_root / service / "log")
     ensure_dir(shared_root / "redis")
     ensure_dir(shared_root / "postgres")
     ensure_dir(shared_root / "certbot" / "conf")
     ensure_dir(shared_root / "certbot" / "www")
-    ensure_dir(shared_root / "nginx" / "logs")
+    ensure_dir(shared_root / "nginx" / "log")
 
 
 def create_launch_scripts(shared_root: Path) -> None:
@@ -145,6 +155,16 @@ Environment Variables:
         help="Repository URL for downloading binaries (default: https://github.com/Open-Store-Foundation/node)"
     )
     
+    parser.add_argument(
+        "--sqlite-db",
+        help="SQLite database name (default: bsctest)"
+    )
+    
+    parser.add_argument(
+        "--tag",
+        help="Release version tag to download (default: local for copying local builds)"
+    )
+    
     args = parser.parse_args()
     
     repo_root = Path(__file__).resolve().parents[1]
@@ -182,10 +202,10 @@ Environment Variables:
     ensure_dir(volume_root)
     ensure_service_dirs(volume_root)
 
-    db_name = prompt("SQLite database name (default: bsctest): ", "bsctest")
+    db_name = args.sqlite_db if args.sqlite_db else prompt("SQLite database name (default: bsctest): ", "bsctest")
     ensure_sqlite_file(volume_root, db_name)
 
-    version = prompt("Release version tag (default: local): ", "local")
+    version = args.tag if args.tag else prompt("Release version tag (default: local): ", "local")
 
     success = True
     if version.lower() == "local":

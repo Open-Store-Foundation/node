@@ -54,7 +54,7 @@ mod ext;
 async fn test() {
     info!("Starting validator");
     dotenv().ok();
-    init_tracer();
+    let _guard = init_tracer();
 
     let pk = arc!(ValidatorSigner::new(env::validator_pk()).expect("PrivateKey hex is not valid!"));
     let url = env::eth_node_url();
@@ -78,7 +78,7 @@ async fn test() {
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    init_tracer();
+    let _guard = init_tracer();
     info!("Starting validator");
 
     if !is_debug() {

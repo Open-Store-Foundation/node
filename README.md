@@ -304,7 +304,7 @@ Each service has its own detailed documentation:
 ### Deployment Documentation
 Comprehensive deployment guides and tools:
 - [Deployment Guide](tools/deploy/DEPLOY.md) - Production deployment workflow
-- [Environment Configuration](tools/deploy/ENV.md) - Environment variables reference
+- [Environment Configuration](tools/deploy/ENVGEN.md) - Environment variables reference
 - [Docker Compose Setup](tools/deploy/docker-compose.yml) - Multi-service container orchestration
 
 ## License

@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 tracing-subscriber = { workspace = true }
+file-rotate = { workspace = true }
+tracing-appender = { workspace = true }

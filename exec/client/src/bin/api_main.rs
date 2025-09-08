@@ -27,12 +27,13 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
+use core_log::init_tracer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting application");
     dotenv().ok();
-    core_log::init_tracer();
+    let _guard = init_tracer();
 
     // Optional: Run Migrations (ensure migrations folder exists)
     // db_client.migrate().await.map_err(ClientError::Migration)?;
@@ -123,4 +124,6 @@ fn v1_routes() -> Router<ClientState> {
         .route("/review/create", post(handler::review::create_review))
         // Report Route
         .route("/report/create", post(handler::report::create_report))
+        // Utils
+        .route("/health", get(handler::util::handle_health))
 }

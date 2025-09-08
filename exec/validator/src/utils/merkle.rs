@@ -114,7 +114,7 @@ impl <T : Hasher> MerkleTree<T> {
 
 #[tokio::test]
 async fn test_app_verifier() {
-    init_tracer();
+    let _guard = init_tracer();
     let data = vec![
         String::from("1").into_bytes(),
         String::from("2").into_bytes(),
@@ -145,7 +145,7 @@ async fn test_app_verifier() {
 
 #[tokio::test]
 async fn test_generated() {
-    init_tracer();
+    let _guard = init_tracer();
     let data: Vec<[u8; 32]> = vec![
         hex::decode("a0f9abf1e9364aa569fa42d6b1c0e737d0207f8859eac865a042e842e6e971fe").expect("").try_into().expect(""),
         hex::decode("d8cb30504fb40a73fc7e20ca82c40bdc0649ca90dbeb91d9b1edf10d76078038").expect("").try_into().expect(""),

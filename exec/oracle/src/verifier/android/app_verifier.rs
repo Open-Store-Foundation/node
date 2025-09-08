@@ -151,7 +151,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_app_verifier() {
-        init_tracer();
+        let _guard = init_tracer();
 
         // let url =  EnvApp::node_url();
         // let confirm =  EnvApp::confirmations();

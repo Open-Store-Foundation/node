@@ -32,7 +32,7 @@ struct AppState {
 async fn main() {
     info!("Starting application");
     dotenv().ok();
-    core_log::init_tracer();
+    let _guard = core_log::init_tracer();
 
     let producer = arc!(
         KfProducer::new_client(

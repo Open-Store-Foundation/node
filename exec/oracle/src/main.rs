@@ -34,7 +34,7 @@ mod env;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    init_tracer();
+    let _guard = init_tracer();
     
     if !is_debug() {
         let settings = TgClientSettings {

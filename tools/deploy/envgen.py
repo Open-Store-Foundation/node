@@ -8,10 +8,33 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 class EnvGenerator:
-    def __init__(self, config_dir: Path):
+    def __init__(self, config_dir: Path, volume_dir: Optional[str] = None):
         self.config_dir = config_dir
+        self.volume_dir = volume_dir
         self.templates = self._define_templates()
         self.profiles = self._define_profiles()
+    
+    def _parse_env_file(self, path: Path) -> Dict[str, str]:
+        values: Dict[str, str] = {}
+        try:
+            with open(path, 'r') as f:
+                for raw in f:
+                    line = raw.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    if '=' not in line:
+                        continue
+                    key, val = line.split('=', 1)
+                    key = key.strip()
+                    val = val.strip()
+                    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                        val = val[1:-1]
+                    values[key] = val
+        except FileNotFoundError:
+            print(f"Warning: config file not found: {path}")
+        except Exception as e:
+            print(f"Warning: failed to read config file {path}: {e}")
+        return values
     
     def _define_profiles(self) -> Dict[str, Dict[str, str]]:
         return {
@@ -55,7 +78,9 @@ class EnvGenerator:
                 "ORACLE_ADDRESS": "",
                 # SYNC
                 "CONFIRM_COUNT": "",
-                "TX_POLL_TIMEOUT_MS": ""
+                "TX_POLL_TIMEOUT_MS": "",
+                # SERVICES
+                "LOG_PATH": ""
             },
             "validator": {
                 # TELEGRAM
@@ -78,7 +103,8 @@ class EnvGenerator:
                 # DATABASE
                 "DATABASE_URL": "",
                 # SERVICES
-                "FILE_STORAGE_PATH": "./tmp/"
+                "FILE_STORAGE_PATH": "./tmp/",
+                "LOG_PATH": ""
             },
             "daemon-client": {
                 # TELEGRAM
@@ -99,7 +125,9 @@ class EnvGenerator:
                 "HISTORICAL_SYNC_THRESHOLD": "",
                 "HISTORICAL_SYNC_BLOCK": "",
                 # DATABASE
-                "DATABASE_URL": ""
+                "DATABASE_URL": "",
+                # SERVICES
+                "LOG_PATH": ""
             },
             "api-client": {
                 # TELEGRAM
@@ -112,7 +140,8 @@ class EnvGenerator:
                 "DATABASE_URL": "",
                 # SERVICES
                 "REDIS_URL": "",
-                "CLIENT_HOST_URL": ""
+                "CLIENT_HOST_URL": "",
+                "LOG_PATH": ""
             },
             "postgres": {
                 # POSTGRES
@@ -125,7 +154,9 @@ class EnvGenerator:
                 # NGINX
                 "DOMAIN_NAME": "",
                 "NGINX_VARIANT": "",
-                "CERTBOT_EMAIL": ""
+                "CERTBOT_EMAIL": "",
+                # SERVICES
+                "LOG_PATH": ""
             }
         }
     
@@ -165,8 +196,8 @@ class EnvGenerator:
         
         return required_inputs
     
-    def collect_inputs(self, profile: Optional[str] = None, service: Optional[str] = None) -> Dict[str, str]:
-        inputs = {}
+    def collect_inputs(self, profile: Optional[str] = None, service: Optional[str] = None, config_path: Optional[str] = None) -> Dict[str, str]:
+        inputs: Dict[str, str] = {}
         
         print("=== OpenStore Environment Configuration ===\n")
         
@@ -179,10 +210,20 @@ class EnvGenerator:
             for svc in self.templates.keys():
                 required_inputs.update(self.get_service_input_requirements(svc))
         
+        if config_path:
+            preset = self._parse_env_file(Path(config_path))
+            inputs.update(preset)
+        
         # Check if service needs profile-specific configuration
         profile_dependent_keys = {"CHAIN_ID", "ORACLE_ADDRESS", "STORE_ADDRESS", "HISTORICAL_SYNC_BLOCK", 
                                 "HISTORICAL_SYNC_THRESHOLD", "CONFIRM_COUNT", "GF_NODE_URL", "TX_POLL_TIMEOUT_MS"}
-        needs_profile = bool(required_inputs.intersection(profile_dependent_keys))
+        if service:
+            keys_in_scope = set(self.templates.get(service, {}).keys())
+        else:
+            keys_in_scope = set()
+            for svc in self.templates.keys():
+                keys_in_scope.update(self.templates[svc].keys())
+        needs_profile = any((k in keys_in_scope) and (k not in inputs) for k in profile_dependent_keys)
         
         selected_profile = None
         if needs_profile:
@@ -208,55 +249,55 @@ class EnvGenerator:
         else:
             print("Service doesn't require blockchain profile configuration.")
         
-        if "ADMIN_WALLET_PK" in required_inputs or "USER_WALLET_PK" in required_inputs:
+        if ("ADMIN_WALLET_PK" in required_inputs and "ADMIN_WALLET_PK" not in inputs) or ("USER_WALLET_PK" in required_inputs and "USER_WALLET_PK" not in inputs):
             print("\nPrivate Keys:")
-            if "ADMIN_WALLET_PK" in required_inputs:
+            if "ADMIN_WALLET_PK" in required_inputs and "ADMIN_WALLET_PK" not in inputs:
                 inputs["ADMIN_WALLET_PK"] = input("Admin Wallet Private Key (for oracle/validator): ").strip()
-            if "USER_WALLET_PK" in required_inputs:
+            if "USER_WALLET_PK" in required_inputs and "USER_WALLET_PK" not in inputs:
                 inputs["USER_WALLET_PK"] = input("User Wallet Private Key (for clients): ").strip()
         
         telegram_inputs = {"TG_TOKEN", "TG_INFO_CHAT_ID", "TG_ALERT_CHAT_ID"}
-        if telegram_inputs.intersection(required_inputs):
+        if any(k in required_inputs and k not in inputs for k in telegram_inputs):
             print("\nTelegram Configuration:")
-            if "TG_TOKEN" in required_inputs:
+            if "TG_TOKEN" in required_inputs and "TG_TOKEN" not in inputs:
                 inputs["TG_TOKEN"] = input("Telegram Bot Token: ").strip()
-            if "TG_INFO_CHAT_ID" in required_inputs:
+            if "TG_INFO_CHAT_ID" in required_inputs and "TG_INFO_CHAT_ID" not in inputs:
                 inputs["TG_INFO_CHAT_ID"] = input("Telegram Info Chat ID: ").strip()
-            if "TG_ALERT_CHAT_ID" in required_inputs:
+            if "TG_ALERT_CHAT_ID" in required_inputs and "TG_ALERT_CHAT_ID" not in inputs:
                 inputs["TG_ALERT_CHAT_ID"] = input("Telegram Alert Chat ID: ").strip()
         
         database_inputs = {"POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "SQLITE_DB"}
-        if database_inputs.intersection(required_inputs):
+        if any(k in required_inputs and k not in inputs for k in database_inputs):
             print("\nDatabase Configuration:")
-            if "POSTGRES_HOST" in required_inputs:
+            if "POSTGRES_HOST" in required_inputs and "POSTGRES_HOST" not in inputs:
                 inputs["POSTGRES_HOST"] = input("PostgreSQL Host (default: postgres): ").strip() or "postgres"
-            if "POSTGRES_DB" in required_inputs:
+            if "POSTGRES_DB" in required_inputs and "POSTGRES_DB" not in inputs:
                 inputs["POSTGRES_DB"] = input("PostgreSQL Database Name: ").strip()
-            if "POSTGRES_USER" in required_inputs:
+            if "POSTGRES_USER" in required_inputs and "POSTGRES_USER" not in inputs:
                 inputs["POSTGRES_USER"] = input("PostgreSQL Username: ").strip()
-            if "POSTGRES_PASSWORD" in required_inputs:
+            if "POSTGRES_PASSWORD" in required_inputs and "POSTGRES_PASSWORD" not in inputs:
                 inputs["POSTGRES_PASSWORD"] = input("PostgreSQL Password: ").strip()
-            if "SQLITE_DB" in required_inputs:
+            if "SQLITE_DB" in required_inputs and "SQLITE_DB" not in inputs:
                 inputs["SQLITE_DB"] = input("SQLite Database Name (for validator): ").strip()
         
         redis_inputs = {"REDIS_URL"}
-        if redis_inputs.intersection(required_inputs):
+        if any(k in required_inputs and k not in inputs for k in redis_inputs):
             print("\nRedis Configuration:")
-            if "REDIS_HOST" in required_inputs:
+            if "REDIS_HOST" in required_inputs and "REDIS_HOST" not in inputs:
                 inputs["REDIS_HOST"] = input("Redis Host (default: redis): ").strip() or "redis"
-            if "REDIS_USER" in required_inputs:
+            if "REDIS_USER" in required_inputs and "REDIS_USER" not in inputs:
                 inputs["REDIS_USER"] = input("Redis Username (optional): ").strip()
-            if "REDIS_PASS" in required_inputs:
+            if "REDIS_PASS" in required_inputs and "REDIS_PASS" not in inputs:
                 inputs["REDIS_PASS"] = input("Redis Password (optional): ").strip()
         
-        if "FILE_STORAGE_PATH" in required_inputs:
+        if "FILE_STORAGE_PATH" in required_inputs and "FILE_STORAGE_PATH" not in inputs:
             print("\nValidator File Storage:")
             inputs["FILE_STORAGE_PATH"] = input("FILE_STORAGE_PATH for validator(default './tmp/'): ").strip() or "./tmp/"
         
         nginx_inputs = {"DOMAIN_NAME", "NGINX_VARIANT", "CERTBOT_EMAIL"}
-        if nginx_inputs.intersection(required_inputs):
+        if any(k in required_inputs and k not in inputs for k in nginx_inputs):
             print("\nNginx Configuration:")
-            if "NGINX_VARIANT" in required_inputs:
+            if "NGINX_VARIANT" in required_inputs and "NGINX_VARIANT" not in inputs:
                 print("Available nginx variants:")
                 print("  http - HTTP only configuration")
                 print("  https - HTTPS with SSL certificates")
@@ -269,20 +310,20 @@ class EnvGenerator:
                     else:
                         print("Invalid variant. Please choose 'http', 'https', or 'none'")
                 
-                if inputs["NGINX_VARIANT"] != "none" and "DOMAIN_NAME" in required_inputs:
+                if inputs["NGINX_VARIANT"] != "none" and "DOMAIN_NAME" in required_inputs and "DOMAIN_NAME" not in inputs:
                     inputs["DOMAIN_NAME"] = input("Domain name (e.g., example.com): ").strip()
                 
-                if inputs["NGINX_VARIANT"] in ["http", "https"] and "CERTBOT_EMAIL" in required_inputs:
+                if inputs["NGINX_VARIANT"] in ["http", "https"] and "CERTBOT_EMAIL" in required_inputs and "CERTBOT_EMAIL" not in inputs:
                     inputs["CERTBOT_EMAIL"] = input("Email for SSL certificates (Let's Encrypt): ").strip()
         
         blockchain_inputs = {"ETH_NODE_URL", "ETHSCAN_API_KEY", "CLIENT_HOST_URL"}
-        if blockchain_inputs.intersection(required_inputs):
+        if any(k in required_inputs and k not in inputs for k in blockchain_inputs):
             print(f"\nBlockchain Configuration:")
-            if "ETH_NODE_URL" in required_inputs:
+            if "ETH_NODE_URL" in required_inputs and "ETH_NODE_URL" not in inputs:
                 inputs["ETH_NODE_URL"] = input("Ethereum Node URL: ").strip()
-            if "ETHSCAN_API_KEY" in required_inputs:
+            if "ETHSCAN_API_KEY" in required_inputs and "ETHSCAN_API_KEY" not in inputs:
                 inputs["ETHSCAN_API_KEY"] = input("Etherscan API Key: ").strip()
-            if "CLIENT_HOST_URL" in required_inputs:
+            if "CLIENT_HOST_URL" in required_inputs and "CLIENT_HOST_URL" not in inputs:
                 inputs["CLIENT_HOST_URL"] = input("Client Host URL (default: 127.0.0.1:8080): ").strip() or "127.0.0.1:8080"
         
         if selected_profile and (service is None or any(key in self.templates.get(service, {}) for key in ["ORACLE_ADDRESS", "STORE_ADDRESS"])):
@@ -298,6 +339,44 @@ class EnvGenerator:
         
         return inputs
     
+    def write_output_env(self, inputs: Dict[str, str], output_path: str) -> None:
+        try:
+            with open(output_path, 'w') as f:
+                sections: List[tuple] = [
+                    ("# TELEGRAM", ["TG_TOKEN", "TG_INFO_CHAT_ID", "TG_ALERT_CHAT_ID"]),
+                    ("# WALLET", ["ADMIN_WALLET_PK", "USER_WALLET_PK"]),
+                    ("# BLOCKCHAIN", ["ETH_NODE_URL", "CHAIN_ID", "GF_NODE_URL", "ETHSCAN_API_KEY"]),
+                    ("# CONTRACTS", ["ORACLE_ADDRESS", "STORE_ADDRESS"]),
+                    ("# SYNC", ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"]),
+                    ("# DATABASE", ["DATABASE_URL"]),
+                    ("# POSTGRES", ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]),
+                    ("# SERVICES", ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_PATH"]),
+                    ("# NGINX", ["NGINX_VARIANT", "DOMAIN_NAME", "CERTBOT_EMAIL"]),
+                ]
+                written: set = set()
+                first_block = True
+                for header, keys in sections:
+                    present = [k for k in keys if k in inputs and inputs[k] != ""]
+                    if not present:
+                        continue
+                    if not first_block:
+                        f.write("\n")
+                    first_block = False
+                    f.write(f"{header}\n")
+                    for key in present:
+                        f.write(f"{key}={inputs[key]}\n")
+                        written.add(key)
+                remaining = sorted(k for k in inputs.keys() if k not in written)
+                if remaining:
+                    if not first_block:
+                        f.write("\n")
+                    f.write("# OTHER\n")
+                    for key in remaining:
+                        f.write(f"{key}={inputs[key]}\n")
+            print(f"Created consolidated env: {output_path}")
+        except Exception as e:
+            print(f"Warning: failed to write output env {output_path}: {e}")
+    
     def generate_env_content(self, service: str, inputs: Dict[str, str]) -> str:
         content = [f"# {service.upper()} Environment Configuration"]
         template = self.templates[service]
@@ -310,7 +389,7 @@ class EnvGenerator:
             "# CONTRACTS": ["ORACLE_ADDRESS", "STORE_ADDRESS"],
             "# SYNC": ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"],
             "# DATABASE": ["DATABASE_URL"],
-            "# SERVICES": ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH"],
+            "# SERVICES": ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_PATH"],
             "# POSTGRES": ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"],
             "# NGINX": ["DOMAIN_NAME", "CERTBOT_EMAIL"]
         }
@@ -363,6 +442,7 @@ class EnvGenerator:
             "DATABASE_URL": lambda: self._build_database_url(inputs, service, default),
             "REDIS_URL": lambda: self._build_redis_url(inputs),
             "TX_POLL_TIMEOUT_MS": lambda: inputs.get("TX_POLL_TIMEOUT_MS", default),
+            "LOG_PATH": lambda: (f"{self.volume_dir}/{service}/log/app.log" if self.volume_dir else default),
         }
         
         resolver = mappings.get(key)
@@ -472,9 +552,9 @@ class EnvGenerator:
             f.write(content)
         print(f"Created {conf_file}")
     
-    def generate_all(self, inputs: Optional[Dict[str, str]] = None, profile: Optional[str] = None) -> None:
+    def generate_all(self, inputs: Optional[Dict[str, str]] = None, profile: Optional[str] = None, config_path: Optional[str] = None, output_path: Optional[str] = None) -> None:
         if inputs is None:
-            inputs = self.collect_inputs(profile)
+            inputs = self.collect_inputs(profile, None, config_path)
         
         print(f"\nGenerating .env files in {self.config_dir}")
         
@@ -482,6 +562,9 @@ class EnvGenerator:
             self.create_service_env(service, inputs)
         
         self.create_redis_config(inputs.get("REDIS_PASS", ""))
+        
+        if output_path:
+            self.write_output_env(inputs, output_path)
         
         print("\n✅ All .env files generated successfully!")
         print(f"Configuration files created in: {self.config_dir}")
@@ -543,6 +626,21 @@ Examples:
         help="Directory where service .env files will be written (e.g., deploy/config)"
     )
     
+    parser.add_argument(
+        "--volume-dir",
+        help="Host volume directory to compute LOG_PATHs (fallback to VOLUME_DIR env)"
+    )
+    
+    parser.add_argument(
+        "--input",
+        help="Path to a consolidated env file to pre-seed inputs"
+    )
+    
+    parser.add_argument(
+        "--output",
+        help="Path to write a consolidated env file for reuse"
+    )
+    
     args = parser.parse_args()
     
     # Handle help commands that don't need config-dir
@@ -578,7 +676,23 @@ Examples:
             parser.print_help()
             sys.exit(1)
     
-    generator = EnvGenerator(Path(config_dir))
+    # Resolve volume_dir - Priority: 1. Argument, 2. Environment variable
+    volume_dir = None
+    if args.volume_dir:
+        volume_dir = args.volume_dir
+    else:
+        env_volume = os.environ.get("VOLUME_DIR")
+        if env_volume:
+            volume_dir = env_volume
+            print(f"Using VOLUME_DIR from environment: {volume_dir}")
+    if not volume_dir:
+        print("Error: --volume-dir is required to compute LOG_PATH values")
+        print("You can either:")
+        print("  1. Use --volume-dir argument")
+        print("  2. Set VOLUME_DIR environment variable")
+        sys.exit(1)
+    
+    generator = EnvGenerator(Path(config_dir), volume_dir)
     
     if args.service:
         if args.service not in generator.templates:
@@ -586,10 +700,12 @@ Examples:
             generator.list_services()
             sys.exit(1)
         
-        inputs = generator.collect_inputs(args.profile, args.service)
+        inputs = generator.collect_inputs(args.profile, args.service, args.input)
         generator.create_service_env(args.service, inputs)
+        if args.output:
+            generator.write_output_env(inputs, args.output)
     else:
-        generator.generate_all(profile=args.profile)
+        generator.generate_all(profile=args.profile, config_path=args.input, output_path=args.output)
 
 if __name__ == "__main__":
     main()

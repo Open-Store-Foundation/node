@@ -35,7 +35,7 @@ impl ApkBuildVerifier for AndroidBuildVerifier {
 
 #[tokio::test]
 async fn test() {
-    init_tracer();
+    let _guard = init_tracer();
 
     let verifier = arc!(ApkVerifierV2::new(ApkParser::default(), ApkChunker::default()));
     let build_verifier = arc!(AndroidBuildVerifier::new(&verifier));

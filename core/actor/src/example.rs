@@ -126,7 +126,7 @@ mod actor_example {
 
     #[tokio::test]
     async fn start_event_handler() {
-        init_tracer();
+        let _guard = init_tracer();
 
         let handler = Arc::new(DaemonEventHandler {});
         let queue = Arc::new(ExampleQueue::new(10_000));
