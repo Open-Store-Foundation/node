@@ -107,7 +107,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn v1_routes() -> Router<ClientState> {
     Router::new()
         // Admin Routes (Consider adding auth middleware layer)
-        .route("/admin/set_categories", post(handler::admin::set_categories)) // reset etag - no-ttl
+        // .route("/admin/set_categories", post(handler::admin::set_categories)) // reset etag - no-ttl
         // Store Routes
         .route("/feed", get(handler::store::get_feed)) // get-set etag - no-ttl
         .route("/store/categories", get(handler::store::get_categories)) // get-set etag - no-ttl

@@ -37,7 +37,7 @@ services:
     stdin_open: true
     tty: true
     healthcheck:
-      test: ["CMD-SHELL", "curl", "-f", "http://$${CLIENT_HOST_URL}/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/health"]
       interval: 60s
       timeout: 30s
       retries: 3
@@ -179,7 +179,7 @@ services:
       - ${VOLUME_DIR}/certbot/conf:/etc/letsencrypt
       - ${VOLUME_DIR}/certbot/www:/var/www/certbot
     command: >
-      sh -c 'certonly --webroot --webroot-path=/var/www/certbot --email $$CERTBOT_EMAIL --agree-tos --no-eff-email -d $DOMAIN_NAME'
+      sh -c 'certonly --webroot --webroot-path=/var/www/certbot --email $$CERTBOT_EMAIL --agree-tos --no-eff-email -d $$DOMAIN_NAME'
     depends_on:
       - nginx
     profiles:
