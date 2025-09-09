@@ -50,7 +50,7 @@ services:
       - ${CONFIG_DIR}/daemon-client/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
-    restart: unless-stopped
+#    restart: unless-stopped
     networks:
       - client
     stdin_open: true
@@ -69,7 +69,7 @@ services:
       - ${CONFIG_DIR}/oracle/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
-    restart: unless-stopped
+#    restart: unless-stopped
     networks:
       - oracle
     stdin_open: true
@@ -89,7 +89,7 @@ services:
       - ${CONFIG_DIR}/validator/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
-    restart: unless-stopped
+#    restart: unless-stopped
     networks:
       - validator
     stdin_open: true
@@ -217,6 +217,9 @@ services:
     restart: unless-stopped
     networks:
       - monitoring
+      - client
+      - oracle
+      - validator
 
   grafana-agent:
     image: grafana/agent:v0.44.2
