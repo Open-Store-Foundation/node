@@ -227,6 +227,7 @@ services:
       - ${CONFIG_DIR}/grafana/agent.yaml:/etc/agent/agent.yaml
     command:
       - '-config.file=/etc/agent/agent.yaml'
+      - '-config.expand-env=true'
     restart: unless-stopped
 #    extra_hosts:
 #      - "host.docker.internal:host-gateway"

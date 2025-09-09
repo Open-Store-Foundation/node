@@ -590,19 +590,17 @@ class EnvGenerator:
         grafana_dir = self.config_dir / "grafana"
         grafana_dir.mkdir(parents=True, exist_ok=True)
         if grafana_variant != "full":
-            print("Grafana variant is not 'full' - skipping agent.yml")
+            print("Grafana variant is not 'full' - skipping agent.yaml")
             return
         project_root = Path(__file__).parent.parent.parent
         template_dir = project_root / "tools" / "templates" / "grafana"
-        candidate_yml = template_dir / "agent.yml"
-        candidate_yaml = template_dir / "agent.yaml"
-        source_grafana = candidate_yml if candidate_yml.exists() else candidate_yaml
-        target_grafana = grafana_dir / "agent.yml"
+        source_grafana = template_dir / "agent.yaml"
+        target_grafana = grafana_dir / "agent.yaml"
         if source_grafana.exists():
             shutil.copy2(source_grafana, target_grafana)
             print(f"Created {target_grafana}")
         else:
-            print(f"Warning: Grafana agent template not found at {candidate_yml} or {candidate_yaml}")
+            print(f"Warning: Grafana agent template not found at {source_grafana}")
     
     def create_redis_config(self, redis_password: str) -> None:
         redis_dir = self.config_dir / "redis"
