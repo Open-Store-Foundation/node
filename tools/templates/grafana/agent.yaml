@@ -26,25 +26,25 @@ metrics:
             - source_labels: [ __name__ ]
               regex: 'go_.*'
               action: drop
-            - source_labels: [ __name__ ]
-              action: keep
-              regex: >-
-                container_cpu_usage_seconds_total|
-                container_cpu_cfs_throttled_seconds_total|
-                container_cpu_load_average_10s|
-                container_memory_usage_bytes|
-                container_memory_working_set_bytes|
-                container_memory_failcnt|
-                container_memory_failures_total|
-                container_fs_usage_bytes|
-                container_fs_io_time_seconds_total|
-                container_network_receive_bytes_total|
-                container_network_transmit_bytes_total|
-                container_network_receive_errors_total|
-                container_network_transmit_errors_total|
-                container_processes|
-                container_tasks_state|
-                container_start_time_seconds
+#            - source_labels: [ __name__ ]
+#              action: keep
+#              regex: >-
+#                container_cpu_usage_seconds_total|
+#                container_cpu_cfs_throttled_seconds_total|
+#                container_cpu_load_average_10s|
+#                container_memory_usage_bytes|
+#                container_memory_working_set_bytes|
+#                container_memory_failcnt|
+#                container_memory_failures_total|
+#                container_fs_usage_bytes|
+#                container_fs_io_time_seconds_total|
+#                container_network_receive_bytes_total|
+#                container_network_transmit_bytes_total|
+#                container_network_receive_errors_total|
+#                container_network_transmit_errors_total|
+#                container_processes|
+#                container_tasks_state|
+#                container_start_time_seconds
 
         - job_name: 'node_exporter'
           static_configs:
