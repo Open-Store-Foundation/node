@@ -11,6 +11,11 @@ path = "src/bin/api_main.rs"
 name = "daemon-client"
 path = "src/bin/daemon_main.rs"
 
+[env]
+AXUM_HTTP_REQUESTS_TOTAL = "api_client_requests"
+AXUM_HTTP_REQUESTS_DURATION_SECONDS = "api_client_request_duration"
+AXUM_HTTP_REQUESTS_PENDING = "api_client_requests_pending"
+
 [dependencies]
 net_result = { workspace = true }
 net_client = { workspace = true }
@@ -43,13 +48,10 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 # Net
-tower.workspace = true
 tower-http.workspace = true
 axum.workspace = true
 headers.workspace = true
-reqwest.workspace = true
-#reqwest-middleware.workspace = true
-#reqwest-retry.workspace = true
+axum-prometheus = "0.9.0"
 
 # Clients
 client_tg = { workspace = true }

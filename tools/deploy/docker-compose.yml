@@ -36,12 +36,6 @@ services:
       - client
     stdin_open: true
     tty: true
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/health"]
-#      interval: 60s
-#      timeout: 30s
-#      retries: 3
-#      start_period: 40s
 
   daemon-client:
     build:
@@ -158,17 +152,15 @@ services:
     environment:
       - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.template
       - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
-    depends_on:
-      - api-client
     networks:
       - client
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
+      interval: 60s
+      timeout: 30s
       retries: 3
-      start_period: 10s
+      start_period: 30s
 
   certbot:
     image: certbot/certbot:v5.0.0
@@ -181,9 +173,66 @@ services:
     command: >
       sh -c 'certonly --webroot --webroot-path=/var/www/certbot --email $$CERTBOT_EMAIL --agree-tos --no-eff-email -d $$DOMAIN_NAME'
     depends_on:
-      - nginx
+      nginx:
+        condition: service_healthy
     profiles:
       - certbot
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: ospexp
+    restart: unless-stopped
+    env_file:
+      - ${CONFIG_DIR}/postgres/.env
+#    environment:
+#      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - monitoring
+      - client
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.9.1
+    container_name: osnexp
+    command:
+      - '--path.rootfs=/host'
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro'
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  grafana-agent:
+    image: grafana/agent:v0.44.2
+    container_name: grafana-agent
+    env_file:
+      - ${CONFIG_DIR}/grafana/.env
+    volumes:
+      - ${CONFIG_DIR}/grafana/agent.yaml:/etc/agent/agent.yaml
+    command:
+      - '-config.file=/etc/agent/agent.yaml'
+    restart: unless-stopped
+#    extra_hosts:
+#      - "host.docker.internal:host-gateway"
+    networks:
+      - monitoring
+      - client
 
 networks:
   client:
@@ -191,4 +240,6 @@ networks:
   oracle:
     driver: bridge
   validator:
+    driver: bridge
+  monitoring:
     driver: bridge

@@ -25,6 +25,8 @@ use net_client::http::HttpProviderFactory;
 use prost::Message;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
+use axum::http::Method;
+use axum_prometheus::{MetricLayerBuilder, PrometheusMetricLayer};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
 use core_log::init_tracer;
@@ -73,19 +75,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // --- CORS Configuration ---
     let cors = CorsLayer::new()
-        // .allow_origin(Any) // Or specify allowed origins
         .allow_origin(tower_http::cors::Any) // Example: Allow any origin
-        .allow_methods(tower_http::cors::Any) // Allow all methods or specify
+        .allow_methods([Method::GET, Method::POST]) // Allow all methods or specify
         .allow_headers(tower_http::cors::Any); // Allow all headers or specify
+
+    // --- Metrics ---
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
 
     // --- API Routes ---
     let api_router = Router::new()
-        .nest("/v1", v1_routes()); // Group all v1 routes
+        .nest("/v1", v1_routes()) // Group all v1 routes
+        .route("/metrics", get(|| async move { metric_handle.render() }));
 
     // --- Main Router ---
     let app = Router::new()
         .merge(api_router)
         .layer(TraceLayer::new_for_http())
+        .layer(prometheus_layer)
         .layer(cors)
         .with_state(state);
 
@@ -110,14 +116,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn v1_routes() -> Router<ClientState> {
     Router::new()
         // Admin Routes (Consider adding auth middleware layer)
-        // .route("/admin/set_categories", post(handler::admin::set_categories)) // reset etag - no-ttl
+        // .route("/admin/set_categories", post(handler::admin::set_categories))
         // Store Routes
-        .route("/feed", get(handler::store::get_feed)) // get-set etag - no-ttl
-        .route("/store/categories", get(handler::store::get_categories)) // get-set etag - no-ttl
+        .route("/feed", get(handler::store::get_feed))
+        .route("/store/categories", get(handler::store::get_categories))
         // Object Route
-        .route("/asset/chart", get(handler::store::get_chart)) // get-set etag - 1 hour
-        .route("/asset/id/{asset_id}", get(handler::object::get_object_by_id)) // get-set etag
-        .route("/asset/address/{address}", get(handler::object::get_object_by_address)) // get-set etag
+        .route("/asset/chart", get(handler::store::get_chart))
+        .route("/asset/id/{asset_id}", get(handler::object::get_object_by_id))
+        .route("/asset/address/{address}", get(handler::object::get_object_by_address))
         .route("/asset/search", get(handler::search::search_objects))
         .route("/asset/status/{address}", get(handler::object::get_object_status_by_address))
         // Artifact

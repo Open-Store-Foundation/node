@@ -147,13 +147,20 @@ class EnvGenerator:
                 "POSTGRES_HOST": "postgres",
                 "POSTGRES_DB": "",
                 "POSTGRES_USER": "",
-                "POSTGRES_PASSWORD": ""
+                "POSTGRES_PASSWORD": "",
+                "DATA_SOURCE_NAME": "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable"
             },
             "nginx": {
                 # NGINX
                 "DOMAIN_NAME": "",
                 "NGINX_VARIANT": "",
                 "CERTBOT_EMAIL": ""
+            },
+            "grafana": {
+                "GRAFANA_VARIANT": "",
+                "GRAFANA_REMOTE_WRITE_URL": "",
+                "GRAFANA_REMOTE_WRITE_USER": "",
+                "GRAFANA_REMOTE_WRITE_PASSWORD": ""
             }
         }
     
@@ -276,6 +283,8 @@ class EnvGenerator:
                 inputs["POSTGRES_PASSWORD"] = input("PostgreSQL Password: ").strip()
             if "SQLITE_DB" in required_inputs and "SQLITE_DB" not in inputs:
                 inputs["SQLITE_DB"] = input("SQLite Database Name (for validator): ").strip()
+        if "DATA_SOURCE_NAME" not in inputs:
+            inputs["DATA_SOURCE_NAME"] = "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable"
         
         redis_inputs = {"REDIS_URL"}
         if any(k in required_inputs and k not in inputs for k in redis_inputs):
@@ -325,6 +334,25 @@ class EnvGenerator:
                 
                 if inputs["NGINX_VARIANT"] in ["http", "https"] and "CERTBOT_EMAIL" in required_inputs and "CERTBOT_EMAIL" not in inputs:
                     inputs["CERTBOT_EMAIL"] = input("Email for SSL certificates (Let's Encrypt): ").strip()
+        # Grafana configuration prompt (always ask if not preset)
+        if "GRAFANA_VARIANT" not in inputs:
+            print("\nGrafana Configuration:")
+            print("  full - Enable Grafana Agent with remote write")
+            print("  none - Do not configure Grafana")
+            while True:
+                g_variant = input("Select grafana variant (full/none): ").strip().lower()
+                if g_variant in ["full", "none"]:
+                    inputs["GRAFANA_VARIANT"] = g_variant
+                    break
+                else:
+                    print("Invalid variant. Please choose 'full' or 'none'")
+        if inputs.get("GRAFANA_VARIANT") == "full":
+            if "GRAFANA_REMOTE_WRITE_URL" not in inputs:
+                inputs["GRAFANA_REMOTE_WRITE_URL"] = input("Grafana Remote Write URL: ").strip()
+            if "GRAFANA_REMOTE_WRITE_USER" not in inputs:
+                inputs["GRAFANA_REMOTE_WRITE_USER"] = input("Grafana Remote Write Username: ").strip()
+            if "GRAFANA_REMOTE_WRITE_PASSWORD" not in inputs:
+                inputs["GRAFANA_REMOTE_WRITE_PASSWORD"] = input("Grafana Remote Write Password: ").strip()
         
         blockchain_inputs = {"ETH_NODE_URL", "ETHSCAN_API_KEY", "CLIENT_HOST_URL"}
         if any(k in required_inputs and k not in inputs for k in blockchain_inputs):
@@ -359,9 +387,10 @@ class EnvGenerator:
                     ("# CONTRACTS", ["ORACLE_ADDRESS", "STORE_ADDRESS"]),
                     ("# SYNC", ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"]),
                     ("# DATABASE", ["DATABASE_URL"]),
-                    ("# POSTGRES", ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]),
+                    ("# POSTGRES", ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "DATA_SOURCE_NAME"]),
                     ("# SERVICES", ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_DIR", "LOG_PATH"]),
                     ("# NGINX", ["NGINX_VARIANT", "DOMAIN_NAME", "CERTBOT_EMAIL"]),
+                    ("# GRAFANA", ["GRAFANA_REMOTE_WRITE_URL", "GRAFANA_REMOTE_WRITE_USER", "GRAFANA_REMOTE_WRITE_PASSWORD"]),
                 ]
                 written: set = set()
                 first_block = True
@@ -400,8 +429,9 @@ class EnvGenerator:
             "# SYNC": ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"],
             "# DATABASE": ["DATABASE_URL"],
             "# SERVICES": ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_PATH"],
-            "# POSTGRES": ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"],
-            "# NGINX": ["DOMAIN_NAME", "CERTBOT_EMAIL"]
+            "# POSTGRES": ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "DATA_SOURCE_NAME"],
+            "# NGINX": ["DOMAIN_NAME", "CERTBOT_EMAIL"],
+            "# GRAFANA": ["GRAFANA_REMOTE_WRITE_URL", "GRAFANA_REMOTE_WRITE_USER", "GRAFANA_REMOTE_WRITE_PASSWORD"]
         }
         
         # Track which keys have been added
@@ -440,6 +470,8 @@ class EnvGenerator:
     def _resolve_value(self, key: str, inputs: Dict[str, str], default: str, service: str = "") -> str:
         # Skip NGINX_VARIANT for nginx service - it's only used for generation logic
         if key == "NGINX_VARIANT" and service == "nginx":
+            return None
+        if key == "GRAFANA_VARIANT" and service == "grafana":
             return None
             
         if key == "WALLET_PK":
@@ -536,6 +568,11 @@ class EnvGenerator:
     def create_service_env(self, service: str, inputs: Dict[str, str]) -> None:
         if service == "nginx":
             self.create_nginx_config(inputs)
+        if service == "grafana":
+            self.create_grafana_config(inputs)
+            if inputs.get("GRAFANA_VARIANT") == "none":
+                print("Grafana variant set to 'none' - no grafana .env created")
+                return
             
         service_dir = self.config_dir / service
         service_dir.mkdir(parents=True, exist_ok=True)
@@ -547,6 +584,25 @@ class EnvGenerator:
             f.write(content)
         
         print(f"Created {env_file}")
+
+    def create_grafana_config(self, inputs: Dict[str, str]) -> None:
+        grafana_variant = inputs.get("GRAFANA_VARIANT", "none")
+        grafana_dir = self.config_dir / "grafana"
+        grafana_dir.mkdir(parents=True, exist_ok=True)
+        if grafana_variant != "full":
+            print("Grafana variant is not 'full' - skipping agent.yml")
+            return
+        project_root = Path(__file__).parent.parent.parent
+        template_dir = project_root / "tools" / "templates" / "grafana"
+        candidate_yml = template_dir / "agent.yml"
+        candidate_yaml = template_dir / "agent.yaml"
+        source_grafana = candidate_yml if candidate_yml.exists() else candidate_yaml
+        target_grafana = grafana_dir / "agent.yml"
+        if source_grafana.exists():
+            shutil.copy2(source_grafana, target_grafana)
+            print(f"Created {target_grafana}")
+        else:
+            print(f"Warning: Grafana agent template not found at {candidate_yml} or {candidate_yaml}")
     
     def create_redis_config(self, redis_password: str) -> None:
         redis_dir = self.config_dir / "redis"
