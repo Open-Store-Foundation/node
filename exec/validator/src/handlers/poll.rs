@@ -14,6 +14,10 @@ use core_actor::Action;
 use core_std::trier::SyncTrier;
 use derive_more::Display;
 use net_client::node::provider::Web3Provider;
+use service_ethscan::client::EthScanClient;
+use service_ethscan::models::GetLogsParams;
+use std::cmp::max;
+use std::collections::HashSet;
 use prost::Message;
 use service_sc::obj::ScObjService;
 use service_sc::store::ScStoreService;
@@ -54,6 +58,7 @@ pub struct PollHandler {
     validator: Arc<AndroidValidator>,
     config: ValidatorEventPoolConfig,
     validation_repo: Arc<ValidationRepo>,
+    ethscan: Arc<EthScanClient>,
 }
 
 impl PollHandler {
@@ -63,12 +68,14 @@ impl PollHandler {
         provider: Arc<Web3Provider>,
         validator: Arc<AndroidValidator>,
         validation_repo: Arc<ValidationRepo>,
+        ethscan: Arc<EthScanClient>,
     ) -> Self {
         Self {
             provider,
             validator,
             validation_repo,
-            config
+            config,
+            ethscan,
         }
     }
 }
@@ -89,7 +96,7 @@ impl EvmEventPool for PollHandler {
                 return;
             }
 
-            let result = self.poll(block_pointer, ctx.clone())
+            let result = self.poll1(block_pointer, ctx.clone())
                 .await;
 
             let poll = match result {
@@ -118,6 +125,64 @@ impl EvmEventPool for PollHandler {
 }
 
 impl PollHandler {
+
+    async fn poll1(&self, from_block: u64, ctx: Arc<ValidationContext>) -> PollResult<PollReady> {
+        let offset = env::max_logs_per_request();
+        let checksum_address = self.config.address.upper_checksum();
+        let topics: HashSet<B256> = HashSet::from_iter(self.config.topics.clone());
+
+        let mut params = GetLogsParams {
+            from_block,
+            address: Some(checksum_address),
+            offset: Some(offset),
+            topic0: None,
+            page: None,
+        };
+
+        let mut page = 1u32;
+        let mut last_block = from_block;
+        let mut processed = 0usize;
+
+        loop {
+            params.page = Some(page);
+
+            info!("[POLL] Fetching OPENSTORE logs page {} (offset: {})", page, offset);
+            let response = match self.ethscan.get_logs(&params).await {
+                Ok(response) => response,
+                Err(err) => {
+                    error!("[POLL] Error getting OPENSTORE logs: {}", err);
+                    return Ok(PollReady::new(from_block, 0));
+                }
+            };
+
+            let results_count = response.result.len();
+            info!("[POLL] Got {} results for OPENSTORE page {}", results_count, page);
+
+            for entry in response.result.iter() {
+                let Some(topic0) = entry.topic0() else { continue };
+                if !topics.contains(topic0) { continue }
+
+                let opt = self.handle_log(entry).await?;
+                if let Some(action) = opt {
+                    ctx.queue.push(action).await;
+                    processed += 1;
+                }
+            }
+
+            if let Some(item) = response.result.last() {
+                if let Some(block) = item.block_number {
+                    last_block = max(block + 1, last_block);
+                }
+            }
+
+            if (results_count as u32) < offset { break };
+            page += 1;
+        }
+
+        let next_block = max(from_block + 1, last_block);
+        info!("[POLL] Sync events | Count {} | From block {}!", processed, next_block);
+        return Ok(PollReady::new(next_block, processed));
+    }
 
     async fn poll(&self, block_number: u64, ctx: Arc<ValidationContext>) -> PollResult<PollReady> {
         info!("[POLL] Poll events from block {}...", block_number);

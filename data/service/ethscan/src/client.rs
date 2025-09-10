@@ -29,7 +29,7 @@ impl EthScanClient {
             .append_pair("chainid", &self.chain_id)
             .append_pair("module", "logs")
             .append_pair("action", "getLogs")
-            .append_pair("fromBlock", &params.from_block)
+            .append_pair("fromBlock", &params.from_block.to_string())
             .append_pair("apikey", &self.api_key);
 
         if let Some(ref topic0) = params.topic0 {

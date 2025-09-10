@@ -1,3 +1,4 @@
+use std::cmp::max;
 use crate::daemon::handler::sync::add_to_track::AddToTrack;
 use crate::daemon::handler::sync::block_finalized::BlockFinalizedHandler;
 use crate::daemon::handler::sync::new_req::NewRequestHandler;
@@ -23,6 +24,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 use tracing::{error, info, warn};
+use client_tg::{tg_alert, tg_msg};
+use net_client::node::watcher::TxWorkaround;
 
 pub struct ChainSyncHandler {
     store_created_block: u64,
@@ -57,13 +60,175 @@ impl ChainSyncHandler {
     }
 
     pub async fn handle(&self, ctx: Arc<DaemonContex>) {
-        self.sync_logs(ctx)
+        self.sync_logs1(ctx)
             .await;
     }
 
     ///////////
     // RUN
     ///////////
+    // TODO Delete when alchemy getLogs polls are ready for production
+    async fn sync_logs1(&self, ctx: Arc<DaemonContex>) {
+        let next_block_number = match self.batch_repo.get_last_batch().await {
+            Ok(block) => match block {
+                Some(batch) => (batch.to_block_number + 1) as u64,
+                None => self.store_created_block,
+            },
+            Err(e) => {
+                error!("[DAEMON_SYNC] No last block found: {}", e);
+                tg_alert!(format!("[DAEMON_SYNC] No last block found: {}", e));
+                ctx.queue.push_sequential(DaemonAction::Shutdown)
+                    .await;
+
+                return;
+            }
+        };
+
+        let offset = env::max_logs_per_request();
+
+        // Sync EtherScan events
+        let assetlink_address = env::assetlink_address();
+        let mut assetlink_params = GetLogsParams {
+            from_block: 0,
+            address: Some(assetlink_address.upper_checksum()),
+            offset: Some(offset),
+
+            topic0: Some(ScAssetLinkService::SYNC_FINISH_HASH.encode_hex_with_prefix()),
+            page: None,
+        };
+
+        // Sync Open Store events
+        let openstore_address = env::openstore_address();
+        let openstore_signatures: HashSet<B256> = HashSet::from_iter(
+            vec![
+                ScStoreService::BLOCK_FINALIZED_HASH,
+                ScStoreService::NEW_REQUEST_HASH,
+                ScStoreService::ADDED_TO_TRACK_HASH,
+            ]
+        );
+        let mut openstore_params = GetLogsParams {
+            from_block: 0,
+            address: Some(openstore_address.upper_checksum()),
+            offset: Some(offset),
+
+            topic0: None,
+            page: None,
+        };
+
+        let mut last_block = 0;
+        let mut from_block = next_block_number;
+        let mut page = 1u32;
+        // Main loop - always use RPC for real-time syncing
+        loop {
+            if ctx.queue.is_shutdown() {
+                info!("[DAEMON_SYNC] Daemon queue is shutdown!");
+                break;
+            }
+
+            info!(
+                "[DAEMON_SYNC] Sync logs starting block: {}",
+                from_block
+            );
+
+            last_block = from_block;
+            assetlink_params.from_block = from_block;
+            openstore_params.from_block = from_block;
+
+            page = 1;
+            loop {
+                assetlink_params.page = Some(page);
+
+                info!("[DAEMON_SYNC] Fetching ASSETS logs (with topic) page {} (offset: {})", page, offset);
+                let response = match self.ethscan.get_logs(&assetlink_params).await {
+                    Ok(response) => response,
+                    Err(err) => {
+                        error!("[DAEMON_SYNC] Error getting ASSETS logs: {}", err);
+                        tg_msg!(format!("[DAEMON_SYNC] Error getting ASSETS logs: {}", err));
+                        sleep(self.retry_timeout).await;
+                        continue;
+                    }
+                };
+
+                let results_count = response.result.len();
+                info!("[DAEMON_SYNC] Got {} results for ASSETS page {}", results_count, page);
+
+                // Use block numbers from EthScan to fetch actual logs via RPC
+                for entry in response.result.iter() {
+                    self.handle_log(entry).await
+                }
+
+                if let Some(item) = response.result.last() {
+                    if let Some(block) = item.block_number {
+                        last_block = max(block + 1, last_block);
+                    }
+                }
+
+                if (results_count as u32) < offset {
+                    info!("[DAEMON_SYNC] Reached end of results for ASSETS (got {} < {})", results_count, offset);
+                    break;
+                }
+
+                page += 1;
+            }
+
+            page = 1;
+            loop {
+                openstore_params.page = Some(page);
+
+                info!("[DAEMON_SYNC] Fetching OPENSTORE logs (with topic) page {} (offset: {})", page, offset);
+                let response = match self.ethscan.get_logs(&openstore_params).await {
+                    Ok(response) => response,
+                    Err(err) => {
+                        error!("[DAEMON_SYNC] Error getting OPENSTORE logs: {}", err);
+                        tg_msg!(format!("[DAEMON_SYNC] Error getting OPENSTORE logs: {}", err));
+                        sleep(self.retry_timeout).await;
+                        continue;
+                    }
+                };
+
+                let results_count = response.result.len();
+                info!("[DAEMON_SYNC] Got {} results for OPENSTORE page {}", results_count, page);
+
+                // Use block numbers from EthScan to fetch actual logs via RPC
+                for entry in response.result.iter() {
+                    let Some(topic0) = entry.topic0() else {
+                        continue;
+                    };
+
+                    if openstore_signatures.contains(topic0) {
+                        let _ = self.handle_log(entry).await;
+                    }
+                }
+
+                if let Some(item) = response.result.last() {
+                    if let Some(block) = item.block_number {
+                        last_block = max(block + 1, last_block);
+                    }
+                }
+
+                if (results_count as u32) < offset {
+                    info!("[DAEMON_SYNC] Reached end of results for OPENSTORE (got {} < {})", results_count, offset);
+                    break;
+                }
+
+                page += 1;
+            }
+
+            let _ = self.batch_repo.save_batch(
+                TransactionBatch {
+                    from_block_number: from_block as i64,
+                    to_block_number: last_block as i64,
+                    status: TransactionStatus::Confirmed,
+                }
+            ).await;
+
+            from_block = max(from_block + 1, last_block);
+
+            info!("[DAEMON_SYNC] Events synced, next block: {}", from_block);
+            sleep(self.empty_timeout).await;
+        }
+    }
+
     async fn sync_logs(&self, ctx: Arc<DaemonContex>) {
         let Ok(mut next_block_number) = self.bulk_sync().await else {
             ctx.queue.push_sequential(DaemonAction::Shutdown)
@@ -96,7 +261,7 @@ impl ChainSyncHandler {
                 info!("[DAEMON_SYNC] Daemon queue is shutdown!");
                 break;
             }
-            
+
             let current_block = match self.eth.get_block_number().await {
                 Ok(block) => block,
                 Err(err) => {
@@ -224,8 +389,8 @@ impl ChainSyncHandler {
         let checksum = address.upper_checksum();
 
         let mut params = GetLogsParams {
-            from_block: from_block.to_string(),
-            address: Some(address.to_string()),
+            from_block,
+            address: Some(checksum.clone()),
             offset: Some(offset),
 
             topic0: None,
@@ -234,7 +399,7 @@ impl ChainSyncHandler {
 
         if topics0.len() == 1 {
             let topic0 = topics0.iter().next()
-                .expect("impossible state")
+                .expect("impossible state, no topics")
                 .encode_hex_with_prefix();
             params.topic0 = Some(topic0);
         }

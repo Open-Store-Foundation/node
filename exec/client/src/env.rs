@@ -110,6 +110,10 @@ pub fn sync_timeout_ms() -> u64 {
     return 60_000
 }
 
+pub fn max_logs_per_request() -> u32 {
+    return 1_000
+}
+
 // Addresses
 pub fn assetlink_env() -> Result<String, VarError> { env::var(ORACLE_ADDRESS) }
 pub fn assetlink() -> String {

@@ -31,6 +31,9 @@ services:
       - ${CONFIG_DIR}/api-client/.env
     environment:
       - RUST_LOG=${RUST_LOG:-info}
+      - AXUM_HTTP_REQUESTS_TOTAL = "api_client_requests"
+      - AXUM_HTTP_REQUESTS_DURATION_SECONDS = "api_client_request_duration"
+      - AXUM_HTTP_REQUESTS_PENDING = "api_client_requests_pending"
     restart: unless-stopped
     networks:
       - client

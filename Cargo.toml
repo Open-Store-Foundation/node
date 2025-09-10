@@ -107,7 +107,7 @@ sqlx = { version = "0.8.4", features = ["runtime-tokio-rustls", "postgres", "sql
 #moka = { version = "0.12.10",  features = ["default", "future"] } TODO Use for cache
 
 # Web3
-alloy = { version = "1.0.24", features = ["full", "json-rpc", "transports", "sol-types"] }
+alloy = { version = "1.0.30", features = ["full", "json-rpc", "transports", "sol-types"] }
 alloy-network = "1.0.24"
 alloy-chains = "0.2.0"
 

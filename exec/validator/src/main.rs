@@ -34,6 +34,7 @@ use dotenvy::dotenv;
 use net_client::http::HttpProviderFactory;
 use net_client::node::provider::Web3ProviderFactory;
 use net_client::node::signer::ValidatorSigner;
+use service_ethscan::client::EthScanClient;
 use service_sc::obj::ScObjService;
 use service_sc::store::ScStoreService;
 use std::time::Duration;
@@ -120,6 +121,7 @@ async fn main() {
 
     // High level providers
     let greenfield = arc!(GreenfieldClient::new(client.clone(), env::gf_node_url(), Some(pk.clone())));
+    let ethscan = arc!(EthScanClient::new(client.clone(), env::chain_id(), env::ethscan_api_key()));
 
     let store_service = arc!(ScStoreService::new(env::openstore_address(), version, &web3));
     let obj_service = arc!(ScObjService::new(web3.clone()));
@@ -187,6 +189,7 @@ async fn main() {
             web3.clone(),
             android_validator.clone(),
             validation_repo.clone(),
+            ethscan.clone(),
         )
     );
 

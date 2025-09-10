@@ -28,6 +28,7 @@ codegen_block = { workspace = true }
 cloud_gf = { workspace = true }
 
 service_sc = { workspace = true }
+service_ethscan = { workspace = true }
 
 db_sqlite = { workspace = true }
 

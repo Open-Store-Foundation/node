@@ -90,6 +90,7 @@ class EnvGenerator:
                 "ETH_NODE_URL": "",
                 "CHAIN_ID": "",
                 "GF_NODE_URL": "",
+                "ETHSCAN_API_KEY": "",
                 # WALLET
                 "WALLET_PK": "",
                 # CONTRACTS

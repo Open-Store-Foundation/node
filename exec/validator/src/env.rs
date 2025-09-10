@@ -56,6 +56,16 @@ pub fn sync_timeout_ms() -> u64 {
     return 60_000
 }
 
+pub fn max_logs_per_request() -> u32 {
+    return 1_000
+}
+
+pub fn ethscan_api_key_env() -> Result<String, VarError> { env::var("ETHSCAN_API_KEY") }
+pub fn ethscan_api_key() -> String {
+    ethscan_api_key_env()
+        .expect("Can't find `ETHSCAN_API_KEY` in .env")
+}
+
 
 // ADDRESSES
 pub fn openstore_env() -> Result<String, VarError> { env::var("STORE_ADDRESS") }
