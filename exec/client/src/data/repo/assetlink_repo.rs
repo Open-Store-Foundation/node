@@ -26,10 +26,6 @@ impl AssetlinkRepo {
                 object_address, domain, owner_version, status
             )
             VALUES ($1, $2, $3, $4)
-            
-            ON CONFLICT (object_address, owner_version) DO UPDATE SET
-                status = EXCLUDED.status,
-                domain = EXCLUDED.domain
             "#,
             &data.object_address,
             &data.domain,
