@@ -82,7 +82,7 @@ services:
     build:
       dockerfile: Dockerfile.service
     container_name: osv
-    command: ["./general/validator"]
+    command: ["./validator"]
     working_dir: "/app"
     stop_grace_period: 5m
     volumes:
