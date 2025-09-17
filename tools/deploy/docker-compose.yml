@@ -82,11 +82,10 @@ services:
     build:
       dockerfile: Dockerfile.service
     container_name: osv
-    command: ["./validator"]
+    command: ["./general/validator"]
     working_dir: "/app"
     stop_grace_period: 5m
     volumes:
-      - ${VOLUME_DIR}/sqlite/:/app/sqlite
       - ${VOLUME_DIR}/validator/:/app
     env_file:
       - ${CONFIG_DIR}/validator/.env

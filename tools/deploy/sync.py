@@ -27,21 +27,35 @@ def prompt(text: str, default: str) -> str:
 def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
+def set_777_permissions(path: Path, what: str) -> None:
+    try:
+        os.chmod(path, 0o777)
+        print(f"✓ Set 777 permissions on {what}: {path}")
+    except PermissionError:
+        print(f"⚠️  Warning: Could not set 777 permissions on {path} - insufficient permissions")
+    except Exception as e:
+        print(f"⚠️  Warning: Failed to set permissions on {path}: {e}")
+
 def ensure_sqlite_file(shared_root: Path, db_name: str) -> Path:
-    sqlite_dir = shared_root / "sqlite"
+    old_sqlite_dir = shared_root / "sqlite"
+    sqlite_dir = shared_root / "validator" / "sqlite"
     ensure_dir(sqlite_dir)
+
+    old_db_path = old_sqlite_dir / f"{db_name}.db"
     db_path = sqlite_dir / f"{db_name}.db"
+
+    if old_db_path.exists() and not db_path.exists():
+        try:
+            shutil.move(str(old_db_path), str(db_path))
+            print(f"✓ Moved SQLite database to validator: {db_path}")
+        except Exception as e:
+            print(f"⚠️  Warning: Failed to move existing SQLite database {old_db_path} → {db_path}: {e}")
+
     if not db_path.exists():
         db_path.touch()
-    
-    try:
-        os.chmod(db_path, 0o777)
-        print(f"✓ Set 777 permissions on SQLite database: {db_path}")
-    except PermissionError:
-        print(f"⚠️  Warning: Could not set 777 permissions on {db_path} - insufficient permissions")
-    except Exception as e:
-        print(f"⚠️  Warning: Failed to set permissions on {db_path}: {e}")
-    
+
+    set_777_permissions(db_path, "SQLite database")
+
     return db_path
 
 
@@ -108,12 +122,16 @@ def download_direct_binaries(shared_root: Path, version: str, repo_url: str) -> 
 def ensure_service_dirs(shared_root: Path) -> None:
     for service in SERVICE_BINARIES.keys():
         ensure_dir(shared_root / service)
-        ensure_dir(shared_root / service / "log")
+        log_dir = shared_root / service / "log"
+        ensure_dir(log_dir)
+        set_777_permissions(log_dir, "log directory")
     ensure_dir(shared_root / "redis")
     ensure_dir(shared_root / "postgres")
     ensure_dir(shared_root / "certbot" / "conf")
     ensure_dir(shared_root / "certbot" / "www")
-    ensure_dir(shared_root / "nginx" / "log")
+    nginx_log_dir = shared_root / "nginx" / "log"
+    ensure_dir(nginx_log_dir)
+    set_777_permissions(nginx_log_dir, "log directory")
 
 
 def create_launch_scripts(shared_root: Path) -> None:
