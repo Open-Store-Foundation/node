@@ -1,7 +1,6 @@
 metrics:
   wal_directory: '/tmp/grafana-agent-wal'
   global:
-    scrape_interval: 30s
     remote_write:
       - url: ${GRAFANA_REMOTE_WRITE_URL}
         basic_auth:
@@ -16,22 +15,43 @@ metrics:
     - name: integrations
       scrape_configs:
         - job_name: 'postgres'
+          scrape_interval: 30s
           static_configs:
             - targets: ['postgres-exporter:9187']
-          metric_relabel_configs:
-            - source_labels: [ __name__ ]
-              regex: 'go_.*'
-              action: drop
+              regex: >-
+                pg_database_size_bytes|
+                pg_up
+              action: keep
 
         - job_name: 'cadvisor'
+          scrape_interval: 30s
           static_configs:
             - targets: [ 'cadvisor:8080' ]
+              regex: >-
+                container_last_seen
+              action: keep
 
         - job_name: 'node_exporter'
+          scrape_interval: 60s
           static_configs:
             - targets: ['node-exporter:9100']
+              regex: >-
+                node_memory_SwapTotal_bytes|
+                node_memory_MemAvailable_bytes|
+                node_memory_MemFree_bytes|
+                node_memory_MemTotal_bytes|
+                node_load15|
+                node_load5|
+                node_load1|
+                node_filesystem_free_bytes|
+                node_filesystem_size_bytes|
+                node_cpu_seconds_total|
+                up
+
+              action: keep
 
         - job_name: 'api-client'
           metrics_path: /metrics
+          scrape_interval: 60s
           static_configs:
             - targets: ['api-client:8080']
