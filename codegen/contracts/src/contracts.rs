@@ -53,5 +53,5 @@ sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
     OpenStore,
-    "./contracts/OpenStoreV5.json"
+    "./contracts/OpenStoreV6.json"
 );

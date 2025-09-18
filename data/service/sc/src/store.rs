@@ -352,11 +352,24 @@ impl ScStoreService {
     pub async fn least_request_id_to_finalize(&self) -> EthResult<u64> {
         let contract = OpenStore::new(self.store, &self.provider);
 
-        let result = contract.leastRequestIdToFinalize()
+        // let result = contract.leastRequestIdToFinalize() // TODO V2 replace after next contract redeploy
+        //     .call()
+        //     .await?;
+
+        let result: U256 = contract.nextBlockIdToFinalize()
             .call()
             .await?;
 
-        return Ok(result.to());
+        let block = contract.getBlockRef(result - U256::from(1))
+            .call()
+            .await?;
+
+        let result = block.toRequestId.to::<u64>();
+        if result == 0 {
+            return Ok(1);
+        }
+
+        return Ok(result);
     }
 
     pub async fn next_request_id(&self) -> EthResult<u64> {

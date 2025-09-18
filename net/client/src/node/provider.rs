@@ -49,7 +49,7 @@ impl Web3ProviderFactory {
 
         let provider = ProviderBuilder::default()
             .filler(NonceFiller::new(SimpleNonceManager::default()))
-            .filler(MxGasFiller::new(1.0, 1.1))
+            .filler(MxGasFiller::new(1.0, 1.1, 100000000)) // TODO v2 fix logic
             .filler(ChainIdFiller::new(Some(chain_id)))
             .wallet(wallet)
             .connect_client(layer_transport);

@@ -21,7 +21,7 @@ pub struct LogGuard {
 pub fn init_tracer() -> LogGuard {
     // 1. Create a single filter that will be shared by all layers.
     let default_filter: LevelFilter = if cfg!(debug_assertions) {
-        LevelFilter::DEBUG
+        LevelFilter::TRACE
     } else {
         LevelFilter::INFO
     };

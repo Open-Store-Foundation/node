@@ -1,3 +1,4 @@
+use std::cmp::max;
 use alloy::eips::eip1559::Eip1559Estimation;
 use alloy::providers::fillers::{FillerControlFlow, TxFiller};
 use alloy::providers::{Provider, SendableTx};
@@ -16,11 +17,12 @@ pub enum GasFillable {
 pub struct MxGasFiller {
     mx_limit: f64,
     mx_price: f64,
+    min_limit: u128,
 }
 
 impl MxGasFiller {
-    pub fn new(mx_limit: f64, mx_price: f64) -> Self {
-        Self { mx_limit, mx_price }
+    pub fn new(mx_limit: f64, mx_price: f64, min_limit: u128) -> Self {
+        Self { mx_limit, mx_price, min_limit }
     }
 }
 
@@ -50,8 +52,12 @@ impl MxGasFiller {
         };
 
         let (gas_limit, estimate) = futures::try_join!(gas_limit_fut, eip1559_fees_fut)?;
+        let actual_estimate = Eip1559Estimation {
+            max_fee_per_gas: max(self.min_limit, estimate.max_fee_per_gas),
+            max_priority_fee_per_gas: max(self.min_limit, estimate.max_priority_fee_per_gas),
+        };
 
-        Ok(GasFillable::Eip1559 { gas_limit, estimate })
+        Ok(GasFillable::Eip1559 { gas_limit, estimate: actual_estimate })
     }
 }
 
@@ -100,9 +106,9 @@ impl <N: Network> TxFiller<N> for MxGasFiller {
         if let Some(builder) = tx.as_mut_builder() {
             match fillable {
                 GasFillable::Eip1559 { gas_limit, estimate } => {
-                    let mx_gas_limit = (self.mx_limit * (gas_limit as f64)) as u64;
+                    let mx_gas_limit = (self.mx_limit * self.mx_limit * (gas_limit as f64)) as u64;
                     let mx_gas_price = (self.mx_price * (estimate.max_fee_per_gas as f64)) as u128;
-                    let mx_max_priority_fee_per_gas = (self.mx_price * (estimate.max_priority_fee_per_gas as f64)) as u128;
+                    let mx_max_priority_fee_per_gas = (self.mx_limit * (estimate.max_priority_fee_per_gas as f64)) as u128;
                     
                     builder.set_gas_limit(mx_gas_limit);
                     builder.set_max_fee_per_gas(mx_gas_price);
