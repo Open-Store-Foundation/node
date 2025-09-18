@@ -2,6 +2,10 @@ name: Build and Release Binaries
 
 on:
   workflow_dispatch:
+    inputs:
+      tagName:
+        description: Tag name for new release
+        required: true
 
 permissions:
   contents: write
@@ -16,6 +20,12 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
+    - name: Check for main branch
+      if: github.ref != 'refs/heads/main'
+      run: |
+        echo "This workflow can only be run on the main branch - ${{ github.ref }}"
+        exit 1
+
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -51,37 +61,24 @@ jobs:
         ls -la artifacts/
         file artifacts/*
 
-    - name: Get tag name
-      id: tag
-      run: |
-        if [[ $GITHUB_REF == refs/tags/* ]]; then
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-        else
-          echo "tag=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
-        fi
-
     - name: Create GitHub Release and Upload Binaries
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        TAG_NAME="${{ steps.tag.outputs.tag }}"
+        TAG=${{ github.event.inputs.tagName }}
+        
+        echo "TAG=$TAG"
         
         # Create release
-        gh release create "$TAG_NAME" \
-          --title "Release $TAG_NAME" \
-          --notes "Release $TAG_NAME
-
-        Built binaries:
-        - daemon-client
-        - api-client  
-        - validator
-        - oracle" \
+        gh release create "${TAG}" \
+          --title "Release ${TAG}" \
+          --generate-notes \
           --latest \
           artifacts/daemon-client \
           artifacts/api-client \
           artifacts/validator \
           artifacts/oracle
-
-
-
-
+        
+        
+        
+        
