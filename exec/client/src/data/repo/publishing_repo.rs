@@ -1,3 +1,4 @@
+use alloy::hex::ToHexExt;
 use crate::data::dto::DtoPublishing;
 use crate::data::models::{Artifact, Publishing};
 use crate::result::ClientResult;
@@ -79,7 +80,7 @@ impl PublishingRepo {
             WHERE pub.object_address = $1 AND br.version_code = pub.version_code
             ORDER BY br.created_at DESC
             "#,
-            hexer::encode_upper_pref(address)
+            address.upper_checksum()
         )
             .fetch_all(self.pool())
             .await?;

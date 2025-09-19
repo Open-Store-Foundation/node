@@ -143,11 +143,11 @@ impl ObjectRepo {
     
     pub async fn has_by_address(
         &self,
-        address: &str,
+        upper_address: &str,
     ) -> bool {
         let result= sqlx::query_scalar!(
             r#"SELECT COUNT(*) FROM obj WHERE address = $1 LIMIT 1;"#,
-            hexer::encode_upper_pref(address)
+            upper_address
         )
             .fetch_one(self.pool())
             .await;
