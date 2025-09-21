@@ -42,6 +42,7 @@ use tokio::signal;
 use tokio::time::sleep;
 use tracing::{info, warn};
 use core_std::shutdown::shutdown_signal;
+use crate::android::apk::verifier_v3::ApkVerifierV3;
 
 mod android;
 mod env;
@@ -128,7 +129,8 @@ async fn main() {
     let validation_repo = arc!(ValidationRepo::new(&db));
 
     let verifier = arc!(ApkVerifierV2::new(ApkParser::default(), ApkChunker::default()));
-    let build_verifier = arc!(AndroidBuildVerifier::new(&verifier));
+    let verifier_v3 = arc!(ApkVerifierV3::new(ApkParser::default(), ApkChunker::default()));
+    let build_verifier = arc!(AndroidBuildVerifier::new(verifier.clone(), verifier_v3.clone()));
     let file_storage = arc!(FileStorage::new(env::file_storage_path()));
     let android_validator = arc!(
         AndroidValidator::new(

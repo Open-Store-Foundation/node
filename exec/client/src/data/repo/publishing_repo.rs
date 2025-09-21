@@ -1,7 +1,7 @@
-use alloy::hex::ToHexExt;
 use crate::data::dto::DtoPublishing;
 use crate::data::models::{Artifact, Publishing};
 use crate::result::ClientResult;
+use alloy::hex::ToHexExt;
 use codegen_contracts::ext::ToChecksum;
 use core_std::hexer;
 use db_psql::client::PgClient;

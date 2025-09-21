@@ -2,7 +2,6 @@ use crate::data::id::{CategoryId, ObjTypeId, PlatformId, ReqTypeId, TrackId};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use std::hash::{Hash, Hasher};
-use codegen_block::status::ApkValidationStatus;
 
 #[derive(Debug, Clone, Hash, PartialEq, FromRow, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

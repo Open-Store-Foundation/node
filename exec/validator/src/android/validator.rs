@@ -1,5 +1,5 @@
 use crate::android::build::AndroidBuildVerifier;
-use crate::android::status::{ApkResult, ApkValidationStatus};
+use codegen_block::status::{ApkResult, ApkValidationStatus};
 use crate::android::verifier::ApkBuildVerifier;
 use crate::data::file_storage::FileStorage;
 use crate::data::validation_repo::ValidationRepo;
@@ -178,6 +178,11 @@ impl AndroidValidator {
         };
         
         if !checksum.eq(blake_hash.as_bytes()) {
+            error!(
+                "[VALIDATE_COMMON] Checksum mismatch {} and {}",
+                checksum.encode_hex_with_prefix(),
+                blake_hash.to_string()
+            );
             request.status = ApkValidationStatus::HashMismatch.code();
             return request;
         }
@@ -233,12 +238,21 @@ impl AndroidValidator {
         let mut hasher = blake3::Hasher::new();
 
         'trier: while trier.iterate().await {
-            let Ok(path) = self.file_storage.prepare_request(request_id).await else {
-                continue
+            let mut path = match self.file_storage.prepare_request(request_id).await  {
+                Ok(path) => path,
+                Err(e) => {
+                    error!("[VALIDATE_COMMON] Can't prepare file! {}", e);
+                    continue
+                }
             };
 
-            let Ok(mut file) = self.file_storage.file_write(&path).await else {
-                continue
+
+            let mut file = match self.file_storage.file_write(&path).await  {
+                Ok(file) => file,
+                Err(e) => {
+                    error!("[VALIDATE_COMMON] Can't create file! {}", e);
+                    continue
+                }
             };
 
             let mut writer = BufWriter::new(&mut file);
@@ -280,6 +294,7 @@ impl AndroidValidator {
         }
 
         if trier.is_failed() {
+            error!("[VALIDATE_COMMON] Too many retries!");
             let _ = self.file_storage.erase_request(request_id)
                 .await;
 

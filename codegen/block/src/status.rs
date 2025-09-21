@@ -16,6 +16,8 @@ pub enum ApkValidationStatus {
     // #[error("DownloadObj")]
     // DownloadObj,
 
+    #[error("HashMismatch")]
+    HashMismatch,
     #[error("InvalidApkFormat")]
     InvalidApkFormat,
     #[error("InvalidSignBlockFormat")]
@@ -60,14 +62,8 @@ pub enum ApkValidationStatus {
 
     #[error("ProofNotFound")]
     ProofNotFound,
-    #[error("IncorrectEncryptionData")]
-    IncorrectEncryptionData1,
-    #[error("VersionIsOutdated")]
-    VersionIsOutdated,
-    #[error("AssetlinkIsNotVerified")]
-    AssetlinkIsNotVerified,
-    #[error("PublicKeyFormat")]
-    PublicKeyFormat,
+    #[error("IncorrectCertFormat")]
+    IncorrectCertFormat,
     #[error("InvalidProof")]
     InvalidProof,
 }
@@ -85,6 +81,7 @@ impl ApkValidationStatus {
             ApkValidationStatus::InvalidApkFormat => 10,
             ApkValidationStatus::InvalidSignBlockFormat => 11,
             ApkValidationStatus::Zip64NotSupported => 12,
+            ApkValidationStatus::HashMismatch => 13,
 
             ApkValidationStatus::TooManySigners => 20,
             ApkValidationStatus::NoSignersFound => 21,
@@ -107,10 +104,7 @@ impl ApkValidationStatus {
             ApkValidationStatus::DigestAlgorithmNotFound => 63,
 
             ApkValidationStatus::ProofNotFound => 70,
-            ApkValidationStatus::IncorrectEncryptionData1 => 71,
-            ApkValidationStatus::VersionIsOutdated => 72,
-            ApkValidationStatus::AssetlinkIsNotVerified => 73,
-            ApkValidationStatus::PublicKeyFormat => 74,
+            ApkValidationStatus::IncorrectCertFormat => 71,
             ApkValidationStatus::InvalidProof => 75,
         }
     }
@@ -146,10 +140,7 @@ impl From<i32> for ApkValidationStatus {
             63 => Self::DigestAlgorithmNotFound,
 
             70 => Self::ProofNotFound,
-            71 => Self::IncorrectEncryptionData1,
-            72 => Self::VersionIsOutdated,
-            73 => Self::AssetlinkIsNotVerified,
-            74 => Self::PublicKeyFormat,
+            71 => Self::IncorrectCertFormat,
             75 => Self::InvalidProof,
 
             // Default case, including 0

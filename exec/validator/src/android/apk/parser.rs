@@ -5,7 +5,7 @@ use bytes::Bytes;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use core_std::endian::{get_u16_le, get_u32_le, get_u64_le};
 use crate::android::apk::reader;
-use crate::android::status::ApkValidationStatus;
+use codegen_block::status::ApkValidationStatus;
 
 pub const APK_SIG_BLOCK_MAGIC_HI: u64 = 0x3234206b636f6c42;
 pub const APK_SIG_BLOCK_MAGIC_LO: u64 = 0x20676953204b5041;
