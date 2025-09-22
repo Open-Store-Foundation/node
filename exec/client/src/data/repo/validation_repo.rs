@@ -78,7 +78,7 @@ impl ValidationRepo {
                 created_at
             )
             
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, CURRENT_TIMESTAMP))
             
             ON CONFLICT (id) DO UPDATE SET
                 status = EXCLUDED.status
