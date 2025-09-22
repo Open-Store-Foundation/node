@@ -20,7 +20,7 @@ services:
     build:
       dockerfile: Dockerfile.service
     container_name: osa
-    command: ["./api-client"]
+    command: ["/bin/bash", "-c", "./bin/$${NODE_VERSION}/api-client"]
     working_dir: "/app"
     stop_grace_period: 2m
     expose:
@@ -44,7 +44,7 @@ services:
     build:
       dockerfile: Dockerfile.service
     container_name: osd
-    command: ["./daemon-client"]
+    command: ["/bin/bash", "-c", "./bin/$${NODE_VERSION}/daemon-client"]
     working_dir: "/app"
     stop_grace_period: 2m
     volumes:
@@ -63,7 +63,7 @@ services:
     build:
       dockerfile: Dockerfile.service
     container_name: oso
-    command: ["./oracle"]
+    command: ["/bin/bash", "-c", "./bin/$${NODE_VERSION}/oracle"]
     working_dir: "/app"
     stop_grace_period: 5m
     volumes:
@@ -82,7 +82,7 @@ services:
     build:
       dockerfile: Dockerfile.service
     container_name: osv
-    command: ["./validator"]
+    command: ["/bin/bash", "-c", "./bin/$${NODE_VERSION}/validator"]
     working_dir: "/app"
     stop_grace_period: 5m
     volumes:

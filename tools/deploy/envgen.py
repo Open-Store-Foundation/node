@@ -6,6 +6,128 @@ import sys
 import shutil
 from pathlib import Path
 from typing import Dict, List, Optional
+import stat
+import urllib.request
+import urllib.error
+
+SERVICE_BINARIES = {
+    "daemon-client": "daemon-client",
+    "api-client": "api-client",
+    "validator": "validator",
+    "oracle": "oracle",
+}
+
+def ensure_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+
+def set_777_permissions(path: Path, what: str) -> None:
+    try:
+        os.chmod(path, 0o777)
+        print(f"✓ Set 777 permissions on {what}: {path}")
+    except PermissionError:
+        print(f"⚠️  Warning: Could not set 777 permissions on {path} - insufficient permissions")
+    except Exception as e:
+        print(f"⚠️  Warning: Failed to set permissions on {path}: {e}")
+
+def make_executable(path: Path) -> None:
+    try:
+        mode = path.stat().st_mode
+        path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    except Exception:
+        pass
+
+def ensure_sqlite_file(shared_root: Path, db_name: str) -> Path:
+    old_sqlite_dir = shared_root / "sqlite"
+    sqlite_dir = shared_root / "validator" / "sqlite"
+    ensure_dir(sqlite_dir)
+    old_db_path = old_sqlite_dir / f"{db_name}.db"
+    db_path = sqlite_dir / f"{db_name}.db"
+    if old_db_path.exists() and not db_path.exists():
+        try:
+            shutil.move(str(old_db_path), str(db_path))
+            print(f"✓ Moved SQLite database to validator: {db_path}")
+        except Exception as e:
+            print(f"⚠️  Warning: Failed to move existing SQLite database {old_db_path} → {db_path}: {e}")
+    if not db_path.exists():
+        db_path.touch()
+    set_777_permissions(db_path, "SQLite database")
+    return db_path
+
+def ensure_service_dirs(shared_root: Path) -> None:
+    for service in SERVICE_BINARIES.keys():
+        service_dir = shared_root / service
+        ensure_dir(service_dir)
+        log_dir = shared_root / service / "log"
+        ensure_dir(log_dir)
+        set_777_permissions(service_dir, "service directory")
+    ensure_dir(shared_root / "redis")
+    ensure_dir(shared_root / "postgres")
+    ensure_dir(shared_root / "certbot" / "conf")
+    ensure_dir(shared_root / "certbot" / "www")
+    nginx_log_dir = shared_root / "nginx" / "log"
+    ensure_dir(nginx_log_dir)
+    set_777_permissions(nginx_log_dir, "log directory")
+
+def download_direct_binaries(shared_root: Path, version: str, repo_url: str) -> bool:
+    base = f"{repo_url}/releases/download/{version}"
+    any_success = False
+    failed_downloads: List[str] = []
+    for service, binary in SERVICE_BINARIES.items():
+        dst_dir = shared_root / service / "bin" / version
+        ensure_dir(dst_dir)
+        url = f"{base}/{binary}"
+        dst_bin = dst_dir / binary
+        if dst_bin.exists():
+            print(f"✓ Skipping {binary} for {service}@{version} (already exists)")
+            make_executable(dst_bin)
+            any_success = True
+            continue
+        try:
+            print(f"Downloading {binary} from {url}...")
+            with urllib.request.urlopen(url) as resp, open(dst_bin, "wb") as out:
+                shutil.copyfileobj(resp, out)
+            make_executable(dst_bin)
+            any_success = True
+            print(f"✓ Successfully downloaded {binary}")
+        except urllib.error.HTTPError as e:
+            failed_downloads.append(f"{binary}: HTTP {e.code} - {e.reason}")
+        except urllib.error.URLError as e:
+            failed_downloads.append(f"{binary}: {e.reason}")
+        except Exception as e:
+            failed_downloads.append(f"{binary}: {str(e)}")
+    if failed_downloads:
+        print("\nDownload failures:")
+        for failure in failed_downloads:
+            print(f"✗ {failure}")
+    if not any_success:
+        print(f"\n❌ All downloads failed for version {version}")
+        print("Please check:")
+        print(f"  - Version tag exists: {repo_url}/releases/tag/{version}")
+        print("  - Release contains the required binaries")
+        print("  - Internet connection is working")
+    return any_success
+
+def perform_sync(volume_dir_arg: Optional[str], ntag: str, repo_url_arg: Optional[str], sqlite_db_arg: Optional[str], input_path: Optional[str]) -> None:
+    default_repo = "https://github.com/Open-Store-Foundation/node"
+    preset: Dict[str, str] = {}
+    if input_path:
+        tmp_gen = EnvGenerator(Path("."))
+        preset = tmp_gen._parse_env_file(Path(input_path))
+    volume_dir = volume_dir_arg or os.environ.get("VOLUME_DIR")
+    if not volume_dir:
+        print("Error: --volume-dir is required for binary sync (or set VOLUME_DIR)")
+        sys.exit(1)
+    volume_root = Path(volume_dir).resolve()
+    repo_url = repo_url_arg or preset.get("REPO_URL") or default_repo
+    sqlite_db = sqlite_db_arg or preset.get("SQLITE_DB") or "bsctest"
+    ensure_dir(volume_root)
+    ensure_service_dirs(volume_root)
+    ensure_sqlite_file(volume_root, sqlite_db)
+    ok = download_direct_binaries(volume_root, ntag, repo_url)
+    if not ok:
+        print(f"\n❌ Sync failed - could not download binaries for tag {ntag}")
+        sys.exit(1)
+    print(f"\n✅ Successfully synced to {volume_root}")
 
 class EnvGenerator:
     def __init__(self, config_dir: Path):
@@ -78,7 +200,10 @@ class EnvGenerator:
                 # SYNC
                 "CONFIRM_COUNT": "",
                 "TX_POLL_TIMEOUT_MS": "",
-                # SERVICES
+                # BUILD
+                "NODE_VERSION": "",
+                # LOG
+                "RUST_LOG": "",
                 "LOG_PATH": ""
             },
             "validator": {
@@ -100,10 +225,15 @@ class EnvGenerator:
                 "HISTORICAL_SYNC_THRESHOLD": "",
                 "CONFIRM_COUNT": "",
                 "TX_POLL_TIMEOUT_MS": "",
+                # BUILD
+                "NODE_VERSION": "",
                 # DATABASE
                 "DATABASE_URL": "",
-                # SERVICES
+                # VALIDATOR
+                "SQLITE_DB": "",
                 "FILE_STORAGE_PATH": "./tmp/",
+                # LOG
+                "RUST_LOG": "",
                 "LOG_PATH": ""
             },
             "daemon-client": {
@@ -124,9 +254,12 @@ class EnvGenerator:
                 # SYNC
                 "HISTORICAL_SYNC_THRESHOLD": "",
                 "HISTORICAL_SYNC_BLOCK": "",
+                # BUILD
+                "NODE_VERSION": "",
                 # DATABASE
                 "DATABASE_URL": "",
-                # SERVICES
+                # LOG
+                "RUST_LOG": "",
                 "LOG_PATH": ""
             },
             "api-client": {
@@ -136,12 +269,16 @@ class EnvGenerator:
                 "TG_ALERT_CHAT_ID": "",
                 # WALLET
                 "WALLET_PK": "",
+                # BUILD
+                "NODE_VERSION": "",
                 # DATABASE
                 "DATABASE_URL": "",
-                # SERVICES
+                # LOG
+                "RUST_LOG": "",
+                "LOG_PATH": "",
+                # API
                 "REDIS_URL": "",
-                "CLIENT_HOST_URL": "",
-                "LOG_PATH": ""
+                "CLIENT_HOST_URL": ""
             },
             "postgres": {
                 # POSTGRES
@@ -201,7 +338,7 @@ class EnvGenerator:
         
         return required_inputs
     
-    def collect_inputs(self, profile: Optional[str] = None, service: Optional[str] = None, config_path: Optional[str] = None) -> Dict[str, str]:
+    def collect_inputs(self, profile: Optional[str] = None, service: Optional[str] = None, config_path: Optional[str] = None, repo_url: Optional[str] = None, sqlite_db: Optional[str] = None, ntag: Optional[str] = None) -> Dict[str, str]:
         inputs: Dict[str, str] = {}
         
         print("=== OpenStore Environment Configuration ===\n")
@@ -218,6 +355,16 @@ class EnvGenerator:
         if config_path:
             preset = self._parse_env_file(Path(config_path))
             inputs.update(preset)
+        
+        # Determine if we need binary service configs
+        binary_services = {"oracle", "validator", "daemon-client", "api-client"}
+        needs_binary_config = False
+        
+        if service:
+            needs_binary_config = service in binary_services
+        else:
+            # Check if any binary services are in scope
+            needs_binary_config = any(svc in binary_services for svc in self.templates.keys())
         
         # Check if service needs profile-specific configuration
         profile_dependent_keys = {"CHAIN_ID", "ORACLE_ADDRESS", "STORE_ADDRESS", "HISTORICAL_SYNC_BLOCK", 
@@ -254,6 +401,24 @@ class EnvGenerator:
         else:
             print("Service doesn't require blockchain profile configuration.")
         
+        # Handle binary service configs (REPO_URL, NODE_VERSION)
+        if needs_binary_config:
+            if repo_url:
+                inputs["REPO_URL"] = repo_url
+            elif "REPO_URL" not in inputs:
+                print("\nBinary Configuration:")
+                inputs["REPO_URL"] = input("Repository URL (default: https://github.com/Open-Store-Foundation/node): ").strip() or "https://github.com/Open-Store-Foundation/node"
+            
+            if ntag:
+                inputs["NODE_VERSION"] = ntag
+            elif "NODE_VERSION" not in inputs:
+                if "REPO_URL" not in inputs:  # Only print header if not already printed
+                    print("\nBinary Configuration:")
+                inputs["NODE_VERSION"] = input("Node version tag (required for binary services): ").strip()
+                if not inputs["NODE_VERSION"]:
+                    print("Error: Node version tag is required for binary services")
+                    sys.exit(1)
+
         if ("ADMIN_WALLET_PK" in required_inputs and "ADMIN_WALLET_PK" not in inputs) or ("USER_WALLET_PK" in required_inputs and "USER_WALLET_PK" not in inputs):
             print("\nPrivate Keys:")
             if "ADMIN_WALLET_PK" in required_inputs and "ADMIN_WALLET_PK" not in inputs:
@@ -387,11 +552,14 @@ class EnvGenerator:
                     ("# BLOCKCHAIN", ["ETH_NODE_URL", "CHAIN_ID", "GF_NODE_URL", "ETHSCAN_API_KEY"]),
                     ("# CONTRACTS", ["ORACLE_ADDRESS", "STORE_ADDRESS"]),
                     ("# SYNC", ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"]),
+                    ("# BUILD", ["NODE_VERSION", "REPO_URL"]),
                     ("# DATABASE", ["DATABASE_URL"]),
-                    ("# POSTGRES", ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]),
-                    ("# SERVICES", ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_DIR", "LOG_PATH"]),
+                    ("# POSTGRES", ["POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD", "DATA_SOURCE_NAME"]),
+                    ("# API", ["REDIS_URL", "CLIENT_HOST_URL"]),
+                    ("# VALIDATOR", ["SQLITE_DB", "FILE_STORAGE_PATH"]),
+                    ("# LOG", ["RUST_LOG", "LOG_PATH", "LOG_DIR"]),
                     ("# NGINX", ["NGINX_VARIANT", "DOMAIN_NAME", "CERTBOT_EMAIL"]),
-                    ("# GRAFANA", ["GRAFANA_REMOTE_WRITE_URL", "GRAFANA_REMOTE_WRITE_USER", "GRAFANA_REMOTE_WRITE_PASSWORD"]),
+                    ("# GRAFANA", ["GRAFANA_VARIANT", "GRAFANA_REMOTE_WRITE_URL", "GRAFANA_REMOTE_WRITE_USER", "GRAFANA_REMOTE_WRITE_PASSWORD"]),
                 ]
                 written: set = set()
                 first_block = True
@@ -428,11 +596,14 @@ class EnvGenerator:
             "# WALLET": ["WALLET_PK"],
             "# CONTRACTS": ["ORACLE_ADDRESS", "STORE_ADDRESS"],
             "# SYNC": ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"],
+            "# BUILD": ["NODE_VERSION"],
             "# DATABASE": ["DATABASE_URL"],
-            "# SERVICES": ["REDIS_URL", "CLIENT_HOST_URL", "FILE_STORAGE_PATH", "LOG_PATH"],
+            "# VALIDATOR": ["SQLITE_DB", "FILE_STORAGE_PATH"],
+            "# LOG": ["RUST_LOG", "LOG_PATH"],
+            "# API": ["REDIS_URL", "CLIENT_HOST_URL"],
             "# POSTGRES": ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"],
             "# NGINX": ["DOMAIN_NAME", "CERTBOT_EMAIL"],
-            "# GRAFANA": ["GRAFANA_REMOTE_WRITE_URL", "GRAFANA_REMOTE_WRITE_USER", "GRAFANA_REMOTE_WRITE_PASSWORD"]
+            "# GRAFANA": ["GRAFANA_VARIANT", "GRAFANA_REMOTE_WRITE_URL", "GRAFANA_REMOTE_WRITE_USER", "GRAFANA_REMOTE_WRITE_PASSWORD"]
         }
         
         # Track which keys have been added
@@ -472,8 +643,6 @@ class EnvGenerator:
         # Skip NGINX_VARIANT for nginx service - it's only used for generation logic
         if key == "NGINX_VARIANT" and service == "nginx":
             return None
-        if key == "GRAFANA_VARIANT" and service == "grafana":
-            return None
             
         if key == "WALLET_PK":
             if service in ["oracle", "validator"]:
@@ -486,6 +655,7 @@ class EnvGenerator:
             "REDIS_URL": lambda: self._build_redis_url(inputs),
             "TX_POLL_TIMEOUT_MS": lambda: inputs.get("TX_POLL_TIMEOUT_MS", default),
             "LOG_PATH": lambda: f"{inputs.get('LOG_DIR', './log').rstrip('/')}/{service}.log" if 'LOG_DIR' in inputs or default == "" else default,
+            "RUST_LOG": lambda: inputs.get("RUST_LOG", "info"),
         }
         
         resolver = mappings.get(key)
@@ -702,6 +872,26 @@ Examples:
         "--output",
         help="Path to write a consolidated env file for reuse"
     )
+
+    parser.add_argument(
+        "--ntag",
+        help="Node release tag; if set, download binaries for this tag"
+    )
+
+    parser.add_argument(
+        "--volume-dir",
+        help="Volume directory root for storing binaries and data (or set VOLUME_DIR)"
+    )
+
+    parser.add_argument(
+        "--repo-url",
+        help="Repository URL for downloading node binaries"
+    )
+
+    parser.add_argument(
+        "--sqlite-db",
+        help="SQLite database name to create under validator/sqlite"
+    )
     
     args = parser.parse_args()
     
@@ -745,13 +935,17 @@ Examples:
             print(f"Error: Unknown service '{args.service}'")
             generator.list_services()
             sys.exit(1)
-        
-        inputs = generator.collect_inputs(args.profile, args.service, args.input)
+        inputs = generator.collect_inputs(args.profile, args.service, args.input, args.repo_url, args.sqlite_db, args.ntag)
         generator.create_service_env(args.service, inputs)
         if args.output:
             generator.write_output_env(inputs, args.output)
+        if inputs.get("NODE_VERSION"):
+            perform_sync(args.volume_dir, inputs.get("NODE_VERSION"), inputs.get("REPO_URL"), inputs.get("SQLITE_DB"), args.input)
     else:
-        generator.generate_all(profile=args.profile, config_path=args.input, output_path=args.output)
+        inputs = generator.collect_inputs(args.profile, None, args.input, args.repo_url, args.sqlite_db, args.ntag)
+        generator.generate_all(inputs=inputs, profile=args.profile, config_path=args.input, output_path=args.output)
+        if inputs.get("NODE_VERSION"):
+            perform_sync(args.volume_dir, inputs.get("NODE_VERSION"), inputs.get("REPO_URL"), inputs.get("SQLITE_DB"), args.input)
 
 if __name__ == "__main__":
     main()

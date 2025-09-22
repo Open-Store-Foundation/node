@@ -52,6 +52,87 @@ python3 envgen.py --list-services
 python3 envgen.py --list-profiles
 ```
 
+### Binary Sync and Volume Setup
+
+The environment generator also performs binary synchronization for binary services (oracle, validator, daemon-client, api-client). This sets up the volume directory, ensures required folders and SQLite DB exist, and downloads binaries for the specified tag. If the target binary already exists for that tag, it will be reused and download will be skipped.
+
+Key points:
+- `NODE_VERSION` is **required** for binary services and triggers automatic sync
+- `REPO_URL` and `SQLITE_DB` can be read from `--input` and written via `--output`
+- `NODE_VERSION` is written to service envs and consolidated env for Docker usage
+- Binaries are placed under `<volume>/<service>/bin/<tag>/<binary>`
+- Validator SQLite DB is created under `<volume>/validator/sqlite/<name>.db` (existing `<volume>/sqlite` is migrated)
+- Only prompts for binary configs (REPO_URL, NODE_VERSION) when binary services are involved
+- Only prompts for validator config (SQLITE_DB) when validator service is involved
+
+Examples:
+
+```bash
+# Generate binary service envs (NODE_VERSION required, triggers automatic sync)
+python3 envgen.py \
+  --service validator \
+  --profile bsctest \
+  --config-dir deploy/config \
+  --ntag v1.2.3 \
+  --volume-dir /opt/openstore/volume
+
+# Generate all services with binary sync
+python3 envgen.py \
+  --profile bsctest \
+  --config-dir deploy/config \
+  --output deploy/config/.env.all \
+  --ntag v1.2.3 \
+  --volume-dir /opt/openstore/volume
+
+# Interactive mode for binary services (will prompt for NODE_VERSION)
+python3 envgen.py \
+  --service oracle \
+  --profile bsctest \
+  --config-dir deploy/config \
+  --volume-dir /opt/openstore/volume
+```
+
+Volume directory layout after sync (existing binaries are reused, not re-downloaded):
+
+```
+<volume>/
+├── daemon-client/
+│   ├── bin/
+│   │   └── v1.2.3/
+│   │       └── daemon-client
+│   └── log/
+├── api-client/
+│   ├── bin/
+│   │   └── v1.2.3/
+│   │       └── api-client
+│   └── log/
+├── validator/
+│   ├── bin/
+│   │   └── v1.2.3/
+│   │       └── validator
+│   ├── log/
+│   └── sqlite/
+│       └── bsctest.db
+├── oracle/
+│   ├── bin/
+│   │   └── v1.2.3/
+│   │       └── oracle
+│   └── log/
+├── redis/
+├── postgres/
+├── certbot/
+│   ├── conf/
+│   └── www/
+└── nginx/
+    └── log/
+```
+
+Flags for binary services:
+- `--ntag`: Node release tag (required for binary services, triggers sync)
+- `--volume-dir`: Volume root directory (or set `VOLUME_DIR`)
+- `--repo-url`: Custom repository URL (read/write via consolidated env as `REPO_URL`)
+- `--sqlite-db`: SQLite DB name (read/write via consolidated env as `SQLITE_DB`)
+
 ### Generate for Specific Service
 
 ```bash
@@ -82,6 +163,7 @@ python3 envgen.py --profile bsctest
 - **POSTGRES_DB**: PostgreSQL database name
 - **POSTGRES_USER**: PostgreSQL username
 - **POSTGRES_PASSWORD**: PostgreSQL password
+- **SQLITE_DB**: SQLite database name (for validator)
 
 ### Redis
 - **REDIS_HOST**: Redis host (default: redis)
@@ -102,8 +184,16 @@ python3 envgen.py --profile bsctest
 - **NGINX_VARIANT**: Configuration type (http/https/none)
 - **CERTBOT_EMAIL**: Email for SSL certificates (Let's Encrypt)
 
-### File Storage
+### Binary Services
+- **NODE_VERSION**: Node release tag (required for binary services)
+- **REPO_URL**: Repository URL for downloading binaries (default: https://github.com/Open-Store-Foundation/node)
+
+### Validator
 - **FILE_STORAGE_PATH**: Validator file storage path (default: ./tmp/)
+
+### Logging
+- **RUST_LOG**: Rust log level (default: info)
+- **LOG_PATH**: Log file path
 
 ## Deployment Profiles
 
@@ -218,28 +308,46 @@ HISTORICAL_SYNC_BLOCK=...
 CONFIRM_COUNT=...
 TX_POLL_TIMEOUT_MS=...
 
+# BUILD (binary services only)
+NODE_VERSION=...
+
 # DATABASE
 DATABASE_URL=...
 
-# SERVICES
+# VALIDATOR (validator service only)
+SQLITE_DB=...
+FILE_STORAGE_PATH=...
+
+# LOG (binary services only)
+RUST_LOG=...
+LOG_PATH=...
+
+# API (api-client service only)
 REDIS_URL=...
 CLIENT_HOST_URL=...
-FILE_STORAGE_PATH=...
 
 # POSTGRES (postgres service only)
 POSTGRES_DB=...
 POSTGRES_USER=...
 POSTGRES_PASSWORD=...
+DATA_SOURCE_NAME=...
+
+# GRAFANA (grafana service only)
+GRAFANA_VARIANT=...
+GRAFANA_REMOTE_WRITE_URL=...
+GRAFANA_REMOTE_WRITE_USER=...
+GRAFANA_REMOTE_WRITE_PASSWORD=...
 ```
 
 ### Service-Specific Variables
 
-**Oracle Service**: Telegram, Blockchain, Wallet, Contracts, Sync  
-**Validator Service**: Telegram, Blockchain, Wallet, Contracts, Sync, Database (SQLite), Services  
-**Daemon Client**: Telegram, Blockchain, Wallet, Contracts, Sync, Database (PostgreSQL)  
-**API Client**: Telegram, Wallet, Database (PostgreSQL), Services  
+**Oracle Service**: Telegram, Blockchain, Wallet, Contracts, Sync, Build, Log  
+**Validator Service**: Telegram, Blockchain, Wallet, Contracts, Sync, Build, Database, Validator, Log  
+**Daemon Client**: Telegram, Blockchain, Wallet, Contracts, Sync, Build, Database, Log  
+**API Client**: Telegram, Wallet, Build, Database, Log, API  
 **PostgreSQL Database**: Postgres block only  
-**Nginx Service**: Nginx block only (DOMAIN_NAME, CERTBOT_EMAIL)
+**Nginx Service**: Nginx block only (DOMAIN_NAME, CERTBOT_EMAIL)  
+**Grafana Service**: Grafana block only
 
 ## Requirements
 
