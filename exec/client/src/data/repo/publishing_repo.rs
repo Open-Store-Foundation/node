@@ -60,7 +60,7 @@ impl PublishingRepo {
     ) -> ClientResult<Vec<DtoPublishing>> {
         let rows = sqlx::query!(
             r#"
-            SELECT
+            SELECT DISTINCT ON (pub.track_id)
                 pub.*,
                 
                 art.id AS artifact_id_,
@@ -78,7 +78,7 @@ impl PublishingRepo {
                 INNER JOIN obj ON obj.address = pub.object_address
                 INNER JOIN build_request br ON br.object_address = pub.object_address
             WHERE pub.object_address = $1 AND br.version_code = pub.version_code
-            ORDER BY br.created_at DESC
+            ORDER BY pub.track_id, br.created_at DESC;
             "#,
             address.upper_checksum()
         )

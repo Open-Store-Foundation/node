@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use crate::daemon::data::obj_info_provider::DaemonFactory;
 use crate::data::id::TrackId;
-use crate::data::models::{BuildRequest, NewAsset, Publishing};
+use crate::data::models::{BuildRequest, NewAsset, NewBuildRequest, Publishing};
 use crate::data::repo::artifact_repo::ArtifactRepo;
 use crate::data::repo::error_repo::ErrorRepo;
 use crate::data::repo::object_repo::ObjectRepo;
@@ -82,10 +82,10 @@ impl BlockFinalizedHandler {
             return;
         };
 
-        self.handle_internal(item.transaction_hash, artifact_id).await;
+        self.handle_internal(item.transaction_hash, item.block_timestamp, artifact_id).await;
     }
 
-    async fn handle_internal(&self, transaction_hash: Option<TxHash>, artifact_id: TxHash) {
+    async fn handle_internal(&self, transaction_hash: Option<TxHash>, translation_time: Option<u64>, artifact_id: TxHash) {
         let block_data = match self.store_provider.get_block_data(artifact_id).await {
             Ok(data) => match data {
                 Some(data) => data,
@@ -133,7 +133,7 @@ impl BlockFinalizedHandler {
             return;
         }
 
-        let mut requests: Vec<BuildRequest> = Vec::with_capacity(block.requests.len());
+        let mut requests: Vec<NewBuildRequest> = Vec::with_capacity(block.requests.len());
         let mut results: Vec<String> = vec![];
         let mut artifacts: Vec<(String, i64)> = vec![];
         let mut publishings: Vec<Publishing> = vec![];
@@ -159,6 +159,7 @@ impl BlockFinalizedHandler {
                 Some(result.status as i32),
                 version,
                 owner_version,
+                translation_time,
             );
 
             requests.push(build_request);

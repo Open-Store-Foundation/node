@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 use db_psql::client::PgClient;
 use crate::data::id::{ReqTypeId, TrackId};
-use crate::data::models::BuildRequest;
+use crate::data::models::{BuildRequest, NewBuildRequest};
 use crate::result::ClientResult;
 
 #[derive(Clone)]
@@ -61,7 +61,7 @@ impl ValidationRepo {
         Ok(build_requests)
     }
 
-    pub async fn insert_or_update(&self, new_req: &BuildRequest) -> ClientResult<()> {
+    pub async fn insert_or_update(&self, new_req: &NewBuildRequest) -> ClientResult<()> {
         let req_type_id: i32 = new_req.request_type_id.clone().into();
         let track_id: i32 = new_req.track_id.clone().into();
         sqlx::query_as!(
@@ -74,10 +74,11 @@ impl ValidationRepo {
                 track_id,
                 status,
                 version_code,
-                owner_version
+                owner_version,
+                created_at
             )
             
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             
             ON CONFLICT (id) DO UPDATE SET
                 status = EXCLUDED.status
@@ -88,7 +89,8 @@ impl ValidationRepo {
             track_id,
             new_req.status,
             new_req.version_code,
-            new_req.owner_version as i64
+            new_req.owner_version as i64,
+            new_req.created_at
         )
             .execute(self.pool())
             .await?;

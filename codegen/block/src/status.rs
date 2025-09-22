@@ -118,6 +118,7 @@ impl From<i32> for ApkValidationStatus {
             10 => Self::InvalidApkFormat,
             11 => Self::InvalidSignBlockFormat,
             12 => Self::Zip64NotSupported,
+            13 => Self::HashMismatch,
 
             20 => Self::TooManySigners,
             21 => Self::NoSignersFound,

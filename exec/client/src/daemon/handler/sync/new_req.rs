@@ -68,13 +68,14 @@ impl NewRequestHandler {
             }
         };
 
-        self.handle_internal(request_id, request_type.to(), obj, data.as_ref()).await;
+        self.handle_internal(request_id, request_type.to(), item.block_timestamp, obj, data.as_ref()).await;
     }
 
     async fn handle_internal(
         &self,
         request_id: u64,
         request_type: u8,
+        request_time: Option<u64>,
         obj: Address,
         data: &[u8],
     ) {
@@ -111,7 +112,7 @@ impl NewRequestHandler {
                 }
 
                 let build = self.factory
-                    .create_build_request(request_id, obj, track_id, None, version, owner_version);
+                    .create_build_request(request_id, obj, track_id, None, version, owner_version, request_time);
 
                 res_request = Some(build);
             }

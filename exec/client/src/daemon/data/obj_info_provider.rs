@@ -1,5 +1,5 @@
 use crate::data::id::{CategoryId, PlatformId, ReqTypeId, TrackId};
-use crate::data::models::{BuildRequest, NewArtifact, NewAsset, Publishing};
+use crate::data::models::{BuildRequest, NewArtifact, NewAsset, NewBuildRequest, Publishing};
 use alloy::primitives::Address;
 use cloud_gf::client::{GfError, GreenfieldClient};
 use codegen_contracts::ext::ToChecksum;
@@ -8,6 +8,7 @@ use net_client::node::result::EthError;
 use service_sc::obj::ScObjService;
 use std::sync::Arc;
 use alloy::hex::ToHexExt;
+use chrono::DateTime;
 use thiserror::Error;
 
 pub type DaemonResult<T> = Result<T, DaemonError>;
@@ -56,8 +57,15 @@ impl DaemonFactory {
         status: Option<i32>,
         version_code: i64,
         owner_version: u64,
-    ) -> BuildRequest {
-        let build_request = BuildRequest {
+        timestamp: Option<u64>
+    ) -> NewBuildRequest {
+        let time = if let Some(time) = timestamp {
+            DateTime::from_timestamp_millis(time as i64)
+        } else {
+            None
+        };
+
+        let build_request = NewBuildRequest {
             id: request_id as i64,
             object_address: obj.upper_checksum(),
             request_type_id: ReqTypeId::AndroidBuild,
@@ -65,10 +73,11 @@ impl DaemonFactory {
             status,
             version_code,
             owner_version,
+            created_at: time
         };
         
         return build_request;
-    } 
+    }
     
     pub async fn create_obj(&self, obj: Address) -> DaemonResult<NewAsset> {
         let general = self.obj_service.get_general_info(obj)

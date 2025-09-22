@@ -2,6 +2,7 @@ use crate::data::id::{CategoryId, ObjTypeId, PlatformId, ReqTypeId, TrackId};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use std::hash::{Hash, Hasher};
+use chrono::DateTime;
 
 #[derive(Debug, Clone, Hash, PartialEq, FromRow, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -152,6 +153,18 @@ pub struct Publishing {
     pub track_id: TrackId,
     pub version_code: i64,
     pub is_active: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct NewBuildRequest {
+    pub id: i64,
+    pub request_type_id: ReqTypeId,
+    pub object_address: String,
+    pub track_id: TrackId,
+    pub status: Option<i32>,
+    pub version_code: i64,
+    pub owner_version: u64,
+    pub created_at: Option<DateTime<chrono::Utc>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
