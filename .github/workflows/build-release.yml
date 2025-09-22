@@ -16,7 +16,7 @@ env:
 
 jobs:
   build:
-    name: Build Release Binaries
+    name: Build Release Binaries for ${{ github.event.inputs.tagName }}
     runs-on: ubuntu-22.04
     
     steps:
