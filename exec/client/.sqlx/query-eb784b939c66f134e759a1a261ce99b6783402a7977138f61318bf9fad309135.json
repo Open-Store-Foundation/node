@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                pub.*,\n                \n                art.id AS artifact_id_,\n                art.ref_id AS artifact_ref_id,\n                art.object_address AS artifact_object_address,\n                art.protocol_id AS artifact_protocol_id,\n                art.size AS artifact_size,\n                art.version_name AS artifact_version_name,\n                art.version_code AS artifact_version_code,\n                art.created_at AS artifact_created_at,\n                art.checksum AS artifact_checksum,\n                br.status AS \"status!: i32\"\n            FROM publishing pub\n                INNER JOIN artifact art ON art.object_address = pub.object_address\n                INNER JOIN obj ON obj.address = pub.object_address\n                INNER JOIN build_request br ON br.object_address = pub.object_address\n            WHERE pub.object_address = $1 AND br.version_code = pub.version_code\n            ORDER BY br.created_at DESC\n            ",
+  "query": "\n            SELECT DISTINCT ON (pub.track_id)\n                pub.*,\n                \n                art.id AS artifact_id_,\n                art.ref_id AS artifact_ref_id,\n                art.object_address AS artifact_object_address,\n                art.protocol_id AS artifact_protocol_id,\n                art.size AS artifact_size,\n                art.version_name AS artifact_version_name,\n                art.version_code AS artifact_version_code,\n                art.created_at AS artifact_created_at,\n                art.checksum AS artifact_checksum,\n                br.status AS \"status!: i32\"\n            FROM publishing pub\n                INNER JOIN artifact art ON art.object_address = pub.object_address\n                INNER JOIN obj ON obj.address = pub.object_address\n                INNER JOIN build_request br ON br.object_address = pub.object_address\n            WHERE pub.object_address = $1 AND br.version_code = pub.version_code\n            ORDER BY pub.track_id, br.created_at DESC;\n            ",
   "describe": {
     "columns": [
       {
@@ -108,5 +108,5 @@
       true
     ]
   },
-  "hash": "ca6b99d281bc500777023ee68a185a70a59294662c200cc3f58b9de79fe4f05e"
+  "hash": "eb784b939c66f134e759a1a261ce99b6783402a7977138f61318bf9fad309135"
 }
