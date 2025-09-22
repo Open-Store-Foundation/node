@@ -1,6 +1,7 @@
 use crate::android::apk::chunker::ApkChunker;
 use crate::android::apk::parser::ApkParser;
 use crate::android::apk::verifier::ApkVerifierV2;
+use crate::android::apk::verifier_v3::ApkVerifierV3;
 use crate::android::build::AndroidBuildVerifier;
 use crate::android::validator::AndroidValidator;
 use crate::data::validation_repo::ValidationRepo;
@@ -27,6 +28,7 @@ use codegen_contracts::ext::ToChecksum;
 use core_log::init_tracer;
 use core_std::arc;
 use core_std::profile::is_debug;
+use core_std::shutdown::{hop_signal, shutdown_signal};
 use data::block_repo::BlockRepo;
 use data::file_storage::FileStorage;
 use db_sqlite::client::SqliteClient;
@@ -41,8 +43,7 @@ use std::time::Duration;
 use tokio::signal;
 use tokio::time::sleep;
 use tracing::{info, warn};
-use core_std::shutdown::shutdown_signal;
-use crate::android::apk::verifier_v3::ApkVerifierV3;
+use crate::handlers::restart::RestartHandler;
 
 mod android;
 mod env;
@@ -281,6 +282,10 @@ async fn main() {
             store_service.clone(),
         )
     );
+    
+    let refresh = arc!(
+        RestartHandler::default()
+    );
 
     let validator = arc!(
         ValidatorQueue::new(
@@ -298,6 +303,7 @@ async fn main() {
             finalize.clone(),
 
             unregister.clone(),
+            refresh.clone(),
         )
     );
 
@@ -311,6 +317,11 @@ async fn main() {
                 e_queue.push_sequential(ValidatorEvent::Unregister)
                     .await;
             },
+            _ = hop_signal() => {
+                warn!("Restart validator queue");
+                e_queue.push_sequential(ValidatorEvent::Restart)
+                    .await;
+            }
         }
     });
 

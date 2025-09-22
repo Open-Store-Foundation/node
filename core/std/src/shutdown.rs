@@ -29,3 +29,21 @@ pub async fn shutdown_signal() {
 
     println!("\nSignal received, starting graceful shutdown.");
 }
+
+pub async fn hop_signal() {
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::hangup())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+    
+    // TODO implement #[cfg(not(unix))]
+
+    tokio::select! {
+        _ = terminate => {},
+    }
+
+    println!("\nSignal received, starting graceful restart.");
+}

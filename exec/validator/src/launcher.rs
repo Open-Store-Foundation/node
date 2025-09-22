@@ -20,6 +20,7 @@ use tokio::time::sleep;
 use tracing::info;
 use crate::handlers::check_proposal::CheckProposalHandler;
 use crate::handlers::observe_overdue::ObserveOverdueHandler;
+use crate::handlers::restart::RestartHandler;
 
 pub type ValidationQueue = ActionQueue<u64, ValidatorEvent>;
 pub type ValidationAction = Action<ValidatorEvent>;
@@ -57,6 +58,9 @@ pub enum ValidatorEvent {
 
     #[display("Finalize({block_id})")]
     Finalize { block_id: u64 },
+
+    #[display("Unregister")]
+    Restart,
 
     #[display("Unregister")]
     Unregister,
@@ -100,6 +104,7 @@ impl UniqueEvent<u64> for ValidatorEvent {
             ValidatorEvent::ObserveVoting { .. } => 80,
             ValidatorEvent::Finalize { .. } => 90,
             ValidatorEvent::Unregister => 100,
+            ValidatorEvent::Restart => 101,
         }
     }
 
@@ -120,6 +125,7 @@ impl UniqueEvent<u64> for ValidatorEvent {
             ValidatorEvent::ObserveVoting { block_id } => Some(block_id.clone()),
             ValidatorEvent::Finalize { block_id } => Some(block_id.clone()),
             ValidatorEvent::Unregister => Some(0),
+            ValidatorEvent::Restart => Some(0),
         }
     }
 }
@@ -140,6 +146,7 @@ pub struct ValidatorQueue {
     finalize: Arc<FinalizeHandler>,
 
     unregister: Arc<UnregisterHandler>,
+    restart: Arc<RestartHandler>,
 }
 
 impl ValidatorQueue {
@@ -160,6 +167,7 @@ impl ValidatorQueue {
         finalize: Arc<FinalizeHandler>,
 
         unregister: Arc<UnregisterHandler>,
+        restart: Arc<RestartHandler>,
     ) -> Self {
         Self {
             register,
@@ -176,6 +184,7 @@ impl ValidatorQueue {
             finalize,
 
             unregister,
+            restart,
         }
     }
 }
@@ -235,6 +244,10 @@ impl EventHandler<u64, ValidatorEvent> for ValidatorQueue {
             }
             ValidatorEvent::Unregister => {
                 self.unregister.handle(ctx.clone())
+                    .await;
+            }
+            ValidatorEvent::Restart => {
+                self.restart.handle(ctx.clone())
                     .await;
             }
         };

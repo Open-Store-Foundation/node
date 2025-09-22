@@ -11,3 +11,4 @@ pub mod propose;
 pub mod finalize;
 pub mod register;
 pub mod unregister;
+pub mod restart;
