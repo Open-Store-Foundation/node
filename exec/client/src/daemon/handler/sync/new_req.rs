@@ -59,7 +59,7 @@ impl NewRequestHandler {
             ),
             Err(e) => {
                 if let Some(tx_hash) = item.transaction_hash {
-                    let _ = self.error_repo.insert_fatal_tx(tx_hash.encode_hex_upper())
+                    let _ = self.error_repo.insert_fatal_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
@@ -80,7 +80,7 @@ impl NewRequestHandler {
         data: &[u8],
     ) {
         info!("[NEW_REQ_HANDLER] Start handling...");
-        let address = obj.upper_checksum();
+        let address = obj.lower_checksum();
         info!("[NEW_REQ_HANDLER] Request type: {}, obj: {}, request id: {}", request_type, address, request_id);
 
         let mut res_request = None;

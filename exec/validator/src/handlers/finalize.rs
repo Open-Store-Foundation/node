@@ -31,8 +31,8 @@ impl FinalizeHandler {
         while tryer.iterate().await {
             match self.service.finalize(build_version).await {
                 Ok(tx) => {
-                    info!("[FINALIZE_HANDLER] Finalized block {}. Tx: {}", build_version, hexer::encode_upper_pref(tx.transaction_hash));
-                    tg_msg!(format!("[FINALIZE_HANDLER] Finalized block {}. Tx: {}", build_version, hexer::encode_upper_pref(tx.transaction_hash)));
+                    info!("[FINALIZE_HANDLER] Finalized block {}. Tx: {}", build_version, hexer::encode_lower_pref(tx.transaction_hash));
+                    tg_msg!(format!("[FINALIZE_HANDLER] Finalized block {}. Tx: {}", build_version, hexer::encode_lower_pref(tx.transaction_hash)));
 
                     if let Err(e) = self.persist.update_block_state(build_version, BlockState::Finalized).await {
                         error!("[FINALIZE_HANDLER] Failed to update block state to Finalized for {}: {} (but SC finalize succeeded)", build_version, e);

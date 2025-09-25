@@ -83,7 +83,7 @@ impl CreateProposalCase {
 
                     match receipt {
                         Ok(receipt) => {
-                            let tx_id = hexer::encode_upper_pref(receipt.transaction_hash);
+                            let tx_id = hexer::encode_lower_pref(receipt.transaction_hash);
                             let ref_id = receipt.transaction_hash.to_vec();
                             info!("[PROPOSE_HANDLER] Storage block {} - {} uploaded successfully.", block_id, tx_id);
                             let store_info = self.block_repo.contract_block(

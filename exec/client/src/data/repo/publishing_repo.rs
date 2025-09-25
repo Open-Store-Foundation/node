@@ -2,6 +2,7 @@ use crate::data::dto::DtoPublishing;
 use crate::data::models::{Artifact, Publishing};
 use crate::result::ClientResult;
 use alloy::hex::ToHexExt;
+use alloy::primitives::Address;
 use codegen_contracts::ext::ToChecksum;
 use core_std::hexer;
 use db_psql::client::PgClient;
@@ -43,7 +44,7 @@ impl PublishingRepo {
                 version_code = EXCLUDED.version_code,
                 is_active = EXCLUDED.is_active
             "#,
-            publishing.object_address.upper_checksum(),
+            publishing.object_address.lower_checksum(),
             track_id,
             publishing.version_code,
             publishing.is_active
@@ -56,7 +57,7 @@ impl PublishingRepo {
     
     pub async fn get_publishing_by_address(
         &self,
-        address: String,
+        address: &Address,
     ) -> ClientResult<Vec<DtoPublishing>> {
         let rows = sqlx::query!(
             r#"
@@ -80,7 +81,7 @@ impl PublishingRepo {
             WHERE pub.object_address = $1 AND br.version_code = pub.version_code
             ORDER BY pub.track_id, br.created_at DESC;
             "#,
-            address.upper_checksum()
+            address.lower_checksum()
         )
             .fetch_all(self.pool())
             .await?;

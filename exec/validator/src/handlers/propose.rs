@@ -8,7 +8,9 @@ use crate::launcher::{ValidationContext, ValidatorEvent};
 use crate::result::ValidatorResult;
 use crate::utils::stage::Stage;
 use alloy::primitives::Address;
+use client_tg::{tg_alert, tg_msg};
 use codegen_block::block::{ValidationBlock, ValidationResult};
+use core_std::adresse::Adresse;
 use core_std::trier::SyncTrier;
 use openssl::sha::sha256;
 use prost::Message;
@@ -16,7 +18,6 @@ use service_sc::store::{BlockState, ScStoreService};
 use std::cmp::min;
 use std::sync::Arc;
 use tracing::{error, info, warn};
-use client_tg::{tg_alert, tg_msg};
 
 enum ProposalStage {
     Prepare,

@@ -1,8 +1,10 @@
-use sqlx::PgPool;
-use db_psql::client::PgClient;
 use crate::data::id::{ReqTypeId, TrackId};
 use crate::data::models::{BuildRequest, NewBuildRequest};
 use crate::result::ClientResult;
+use alloy::primitives::Address;
+use codegen_contracts::ext::ToChecksum;
+use db_psql::client::PgClient;
+use sqlx::PgPool;
 
 #[derive(Clone)]
 pub struct ValidationRepo {
@@ -21,7 +23,7 @@ impl ValidationRepo {
     
     pub async fn get_requests_by_address(
         &self,
-        address: String,
+        address: Address,
     ) -> ClientResult<Vec<BuildRequest>> {
         let rows = sqlx::query!(
         r#"
@@ -38,23 +40,25 @@ impl ValidationRepo {
                 
             WHERE object_address = $1 AND status = -1;
             "#,
-            address
+            address.lower_checksum()
         )
             .fetch_all(self.pool())
             .await?;
 
         let build_requests = rows
             .into_iter()
-            .map(|row| {
-                BuildRequest {
-                    id: row.id,
-                    request_type_id: ReqTypeId::from(row.request_type_id),
-                    track_id: TrackId::from(row.track_id),
-                    owner_version: row.owner_version as u64,
-                    object_address: row.object_address,
-                    status: row.status,
-                    version_code: row.version_code,
-                }
+            .filter_map(|row| {
+                Some(
+                    BuildRequest {
+                        id: row.id,
+                        request_type_id: ReqTypeId::from(row.request_type_id),
+                        track_id: TrackId::from(row.track_id),
+                        owner_version: row.owner_version as u64,
+                        object_address: row.object_address,
+                        status: row.status,
+                        version_code: row.version_code,
+                    }
+                )
             })
             .collect();
 
@@ -85,7 +89,7 @@ impl ValidationRepo {
             "#,
             new_req.id,
             req_type_id,
-            new_req.object_address,
+            new_req.object_address.lower_checksum(),
             track_id,
             new_req.status,
             new_req.version_code,

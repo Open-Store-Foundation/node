@@ -40,7 +40,7 @@ impl DaemonFactory {
         version: i64,
     ) -> Publishing {
         let publishing = Publishing {
-            object_address: obj.upper_checksum(),
+            object_address: obj.lower_checksum(),
             track_id,
             version_code: version,
             is_active: true,
@@ -67,7 +67,7 @@ impl DaemonFactory {
 
         let build_request = NewBuildRequest {
             id: request_id as i64,
-            object_address: obj.upper_checksum(),
+            object_address: obj.lower_checksum(),
             request_type_id: ReqTypeId::AndroidBuild,
             track_id: TrackId::from(track_id),
             status,
@@ -94,7 +94,7 @@ impl DaemonFactory {
         let new_obj = NewAsset {
             name: general.name,
             id: general.id,
-            address: obj.upper_checksum(),
+            address: obj.lower_checksum(),
             logo: response,
             description: Some(general.description),
             type_id: category.type_id(),
@@ -120,13 +120,13 @@ impl DaemonFactory {
             .map_err(|e| DaemonError::Gf(GfError::ResponseFormat))?;
         
         let artifact = NewArtifact {
-            object_ref: hexer::encode_upper_pref(build.referenceId.as_ref()),
-            object_address: obj.upper_checksum(),
+            object_ref: obj_hex,
+            object_address: obj.lower_checksum(),
             protocol_id: build.protocolId as i32,
             size: payload_size as i64,
             version_code: build.versionCode.to(),
             version_name: Some(build.versionName),
-            checksum: build.checksum.encode_hex_upper_with_prefix(),
+            checksum: build.checksum.encode_hex_with_prefix(),
         };
 
         return Ok(artifact);

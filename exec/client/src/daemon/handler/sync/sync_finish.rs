@@ -46,7 +46,7 @@ impl SyncFinishedHandler {
             Ok(log) => (log.data.app, log.data.status, log.data.version),
             Err(e) => {
                 if let Some(tx_hash) = item.transaction_hash {
-                    let _ = self.error_repo.insert_fatal_tx(tx_hash.encode_hex_upper())
+                    let _ = self.error_repo.insert_fatal_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
@@ -65,13 +65,13 @@ impl SyncFinishedHandler {
         status: u32,
         owner_version: u64,
     ) {
-        let object_addr = obj_address.upper_checksum();
+        let object_addr = obj_address.lower_checksum();
         let website = match self.app_provider.website(obj_address, owner_version).await {
             Ok(website) => website,
             Err(e) => {
                 error!("[SYNC_FINISH_HANDLER] Failed to get website: {}", e);
                 if let Some(tx_hash) = transaction_hash {
-                    let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_upper())
+                    let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
@@ -112,7 +112,7 @@ impl SyncFinishedHandler {
         if sync.is_failed() {
             if let Some(tx_hash) = transaction_hash {
                 error!("[SYNC_FINISH_HANDLER] Failed to handle finish sync event!");
-                let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_upper())
+                let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_with_prefix())
                     .await;
             }
         }

@@ -26,7 +26,7 @@ impl ReportRepo {
             INSERT INTO report (object_address, email, category_id, subcategory_id, description)
             VALUES ($1, $2, $3, $4, $5)
             "#,
-            new_report.object_address.upper_checksum(),
+            new_report.object_address.lower_checksum(),
             new_report.email,
             new_report.category_id,
             new_report.subcategory_id,
@@ -68,7 +68,7 @@ impl ReportRepo {
             WHERE object_address = $1
             LIMIT $2 OFFSET $3
             "#,
-            object_address.upper_checksum(),
+            object_address.lower_checksum(),
             limit,
             offset
         )

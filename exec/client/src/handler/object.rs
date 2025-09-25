@@ -1,4 +1,5 @@
 use alloy::hex::ToHexExt;
+use alloy::primitives::Address;
 use crate::result::{ClientError, ClientResult};
 use crate::state::ClientState;
 use axum::extract::{Path, State};
@@ -26,9 +27,9 @@ pub async fn get_object_by_id(
 
 pub async fn get_object_by_address(
     State(state): State<ClientState>,
-    Path(address): Path<String>,
+    Path(address): Path<Address>,
 ) -> ClientResult<impl IntoResponse> {
-    let addr = address.upper_checksum();
+    let addr = address.lower_checksum();
     let object = state.object_repo
         .find_by_address(addr.as_str())
         .await?;
@@ -42,10 +43,10 @@ pub async fn get_object_by_address(
 
 pub async fn get_object_status_by_address(
     State(state): State<ClientState>,
-    Path(address): Path<String>,
+    Path(address): Path<Address>,
 ) -> ClientResult<impl IntoResponse> {
     let published = state.publishing_repo
-        .get_publishing_by_address(address.clone())
+        .get_publishing_by_address(&address)
         .await?;
 
     let reviewing = state

@@ -90,7 +90,7 @@ impl ChainSyncHandler {
         let assetlink_address = env::assetlink_address();
         let mut assetlink_params = GetLogsParams {
             from_block: 0,
-            address: Some(assetlink_address.upper_checksum()),
+            address: Some(assetlink_address.lower_checksum()),
             offset: Some(offset),
 
             topic0: Some(ScAssetLinkService::SYNC_FINISH_HASH.encode_hex_with_prefix()),
@@ -108,7 +108,7 @@ impl ChainSyncHandler {
         );
         let mut openstore_params = GetLogsParams {
             from_block: 0,
-            address: Some(openstore_address.upper_checksum()),
+            address: Some(openstore_address.lower_checksum()),
             offset: Some(offset),
 
             topic0: None,
@@ -386,7 +386,7 @@ impl ChainSyncHandler {
         from_block: u64,
     ) -> Result<(), EthScanError> {
         let offset = 1000;
-        let checksum = address.upper_checksum();
+        let checksum = address.lower_checksum();
 
         let mut params = GetLogsParams {
             from_block,

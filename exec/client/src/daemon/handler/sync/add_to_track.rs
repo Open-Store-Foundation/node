@@ -44,7 +44,7 @@ impl AddToTrack {
             Ok(log) => (log.data.target, log.data.trackId, log.data.versionCode),
             Err(e) => {
                 if let Some(tx_hash) = item.transaction_hash {
-                    let _ = self.error_repo.insert_fatal_tx(tx_hash.encode_hex_upper())
+                    let _ = self.error_repo.insert_fatal_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
@@ -68,7 +68,7 @@ impl AddToTrack {
         track_id: TrackId,
         version_code: i64,
     ) {
-        info!("[ADD_TO_TRACK] Handling log: target - {} | track - {} | version - {}!", target.upper_checksum(), track_id, version_code);
+        info!("[ADD_TO_TRACK] Handling log: target - {} | track - {} | version - {}!", target.lower_checksum(), track_id, version_code);
 
         let mut sync = SyncTrier::new(1_000, 1.0, 2);
         while sync.iterate().await {
@@ -88,7 +88,7 @@ impl AddToTrack {
         if sync.is_failed() {
             if let Some(tx_hash) = transaction_hash {
                 error!("[ADD_TO_TRACK] Failed to insert publishing, saving tx_hash...");
-                let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_upper())
+                let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_with_prefix())
                     .await;
             }
         }

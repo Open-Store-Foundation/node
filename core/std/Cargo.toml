@@ -8,3 +8,6 @@ chrono = { workspace = true }
 byteorder = { workspace = true }
 tokio = { workspace = true }
 hex = { workspace = true }
+derive_more = { workspace = true }
+serde = { workspace = true }
+alloy-primitives = { workspace = true }

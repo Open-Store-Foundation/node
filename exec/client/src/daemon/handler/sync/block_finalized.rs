@@ -61,7 +61,7 @@ impl BlockFinalizedHandler {
                 if let Some(tx_hash) = item.transaction_hash {
                     let _ = self
                         .error_repo
-                        .insert_fatal_tx(tx_hash.encode_hex_upper())
+                        .insert_fatal_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
@@ -74,7 +74,7 @@ impl BlockFinalizedHandler {
             if let Some(tx_hash) = item.transaction_hash {
                 let _ = self
                     .error_repo
-                    .insert_fatal_tx(tx_hash.encode_hex_upper())
+                    .insert_fatal_tx(tx_hash.encode_hex_with_prefix())
                     .await;
             }
 
@@ -94,7 +94,7 @@ impl BlockFinalizedHandler {
                     if let Some(tx_hash) = transaction_hash {
                         let _ = self
                             .error_repo
-                            .insert_fatal_tx(tx_hash.encode_hex_upper())
+                            .insert_fatal_tx(tx_hash.encode_hex_with_prefix())
                             .await;
                     }
 
@@ -106,7 +106,7 @@ impl BlockFinalizedHandler {
                 if let Some(tx_hash) = transaction_hash {
                     let _ = self
                         .error_repo
-                        .insert_error_tx(tx_hash.encode_hex_upper())
+                        .insert_error_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
@@ -121,7 +121,7 @@ impl BlockFinalizedHandler {
                 if let Some(tx_hash) = transaction_hash {
                     let _ = self
                         .error_repo
-                        .insert_fatal_tx(tx_hash.encode_hex_upper())
+                        .insert_fatal_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
@@ -142,7 +142,7 @@ impl BlockFinalizedHandler {
             let version = result.object_version;
             let owner_version = result.owner_version;
 
-            let obj_address_str = result.object_address.upper_checksum();
+            let obj_address_str = result.object_address.lower_checksum();
             let obj_address = Address::from_str(obj_address_str.as_str());
             let obj_address = match obj_address {
                 Ok(obj_address) => obj_address,
@@ -280,7 +280,7 @@ impl BlockFinalizedHandler {
         if sync.is_failed() {
             if let Some(tx_hash) = transaction_hash {
                 error!("[BLOCK_FINALIZED] Failed sync data, saving tx_hash...");
-                let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_upper())
+                let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_with_prefix())
                     .await;
             }
         }

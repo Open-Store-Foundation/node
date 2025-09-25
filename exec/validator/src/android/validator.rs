@@ -133,7 +133,7 @@ impl AndroidValidator {
         data: &[u8],
     ) -> ValidationResult {
         let mut request = ValidationResult::default_with(
-            request_id, request_type, target.upper_checksum()
+            request_id, request_type, target.lower_checksum()
         );
 
         let result = AndroidObjRequestData::abi_decode_sequence(data.as_ref());
@@ -154,7 +154,7 @@ impl AndroidValidator {
             .await;
 
         let (artifact_ref, artifact_protocol, checksum) = match result {
-            Ok(result) => (hexer::encode_upper_pref(&result.referenceId), result.protocolId as i32, result.checksum),
+            Ok(result) => (hexer::encode_lower_pref(&result.referenceId), result.protocolId as i32, result.checksum),
             Err(e) => {
                 error!("[VALIDATE_COMMON] Can't get artifact info for {version_code}: {}!", e);
                 request.status = ApkValidationStatus::Unavailable.code();
@@ -201,7 +201,7 @@ impl AndroidValidator {
         }
 
         request.file_hash_algorithm = FileHashAlgo::Blake3.code();
-        request.file_hash = hexer::encode_upper_pref(checksum);
+        request.file_hash = hexer::encode_lower_pref(checksum);
 
         if result.status != ApkValidationStatus::Success {
             request.status = result.status.code();
@@ -344,7 +344,7 @@ impl AndroidValidator {
             cert_to_hash.insert(hash, item);
         }
 
-        let owner_address = target.upper_checksum();
+        let owner_address = target.lower_checksum();
         for (ref pub_key_hash, ref cert) in cert_to_hash {
             let proof = proofs.get(pub_key_hash)
                 .ok_or_else(|| ApkValidationStatus::ProofNotFound)?;

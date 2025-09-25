@@ -128,7 +128,7 @@ impl PollHandler {
 
     async fn poll1(&self, from_block: u64, ctx: Arc<ValidationContext>) -> PollResult<PollReady> {
         let offset = env::max_logs_per_request();
-        let checksum_address = self.config.address.upper_checksum();
+        let checksum_address = self.config.address.lower_checksum();
         let topics: HashSet<B256> = HashSet::from_iter(self.config.topics.clone());
 
         let mut params = GetLogsParams {
@@ -268,7 +268,7 @@ impl PollHandler {
             return Ok(None)
         }
 
-        info!("[POLL_BUILD] Poll handle request: {}, app: {}", request_id, app.upper_checksum());
+        info!("[POLL_BUILD] Poll handle request: {}, app: {}", request_id, app.lower_checksum());
         let result = self.validator.validate_request(request_type.to(), app, request_id, data.as_ref())
             .await;
         info!("[POLL_BUILD] Request {} validation result: {}", request_id, result.status);

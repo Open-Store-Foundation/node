@@ -20,7 +20,7 @@ pub async fn blake3(file: &mut File) -> io::Result<String> {
 
     let hash = hasher.finalize()
         .to_hex()
-        .to_uppercase();
+        .to_lowercase();
 
     return Ok(format!("0x{}", hash));
 }

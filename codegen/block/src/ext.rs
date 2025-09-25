@@ -3,9 +3,9 @@ use crate::status::ApkValidationStatus;
 use crate::FileHashAlgo;
 
 impl ValidationResult {
-    pub fn default_with(request_id: u64, request_type: u8, upper_target: String) -> ValidationResult {
+    pub fn default_with(request_id: u64, request_type: u8, target: String) -> ValidationResult {
         let mut result = ValidationResult::unavailable(request_id);
-        result.object_address = upper_target;
+        result.object_address = target;
         result.request_type = request_type as u32;
         result
     }
