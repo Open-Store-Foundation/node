@@ -1,13 +1,10 @@
-use alloy::hex::ToHexExt;
-use alloy::primitives::Address;
+use crate::data::dto::AndroidPublishingResponse;
 use crate::result::{ClientError, ClientResult};
 use crate::state::ClientState;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
-use tracing::{debug, info};
 use codegen_contracts::ext::ToChecksum;
 use net_result::response_data;
-use crate::data::dto::AndroidPublishingResponse;
 
 pub async fn get_object_by_id(
     State(state): State<ClientState>,
@@ -27,7 +24,7 @@ pub async fn get_object_by_id(
 
 pub async fn get_object_by_address(
     State(state): State<ClientState>,
-    Path(address): Path<Address>,
+    Path(address): Path<String>,
 ) -> ClientResult<impl IntoResponse> {
     let addr = address.lower_checksum();
     let object = state.object_repo
@@ -43,7 +40,7 @@ pub async fn get_object_by_address(
 
 pub async fn get_object_status_by_address(
     State(state): State<ClientState>,
-    Path(address): Path<Address>,
+    Path(address): Path<String>,
 ) -> ClientResult<impl IntoResponse> {
     let published = state.publishing_repo
         .get_publishing_by_address(&address)

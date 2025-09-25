@@ -13,12 +13,6 @@ impl ToChecksum for Address {
     fn lower_checksum(&self) -> String { return hexer::encode_lower_pref(&self) }
 }
 
-// impl From<String> for Address {
-//     fn from(value: String) -> Self {
-//         return Address::try_from(value).unwrap_or_else(|_| Address::default());
-//     }
-// }
-
 impl ToChecksum for String {
     fn upper_checksum(&self) -> String {
         if !self.starts_with("0x") {

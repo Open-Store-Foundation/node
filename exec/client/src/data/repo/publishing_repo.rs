@@ -57,7 +57,7 @@ impl PublishingRepo {
     
     pub async fn get_publishing_by_address(
         &self,
-        address: &Address,
+        address: &String,
     ) -> ClientResult<Vec<DtoPublishing>> {
         let rows = sqlx::query!(
             r#"

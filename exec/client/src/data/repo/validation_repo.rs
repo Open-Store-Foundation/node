@@ -23,7 +23,7 @@ impl ValidationRepo {
     
     pub async fn get_requests_by_address(
         &self,
-        address: Address,
+        address: String,
     ) -> ClientResult<Vec<BuildRequest>> {
         let rows = sqlx::query!(
         r#"
