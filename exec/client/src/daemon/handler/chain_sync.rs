@@ -115,7 +115,6 @@ impl ChainSyncHandler {
             page: None,
         };
 
-        let mut last_block = 0;
         let mut from_block = next_block_number;
         let mut page = 1u32;
         // Main loop - always use RPC for real-time syncing
@@ -130,7 +129,12 @@ impl ChainSyncHandler {
                 from_block
             );
 
-            last_block = from_block;
+            let last_block_number = self.eth.get_block_number().await
+                .unwrap_or_else(|e| {
+                    warn!("[DAEMON_SYNC] Can't sync last block number {e}");
+                    from_block
+                });
+
             assetlink_params.from_block = from_block;
             openstore_params.from_block = from_block;
 
@@ -155,12 +159,6 @@ impl ChainSyncHandler {
                 // Use block numbers from EthScan to fetch actual logs via RPC
                 for entry in response.result.iter() {
                     self.handle_log(entry).await
-                }
-
-                if let Some(item) = response.result.last() {
-                    if let Some(block) = item.block_number {
-                        last_block = max(block + 1, last_block);
-                    }
                 }
 
                 if (results_count as u32) < offset {
@@ -200,12 +198,6 @@ impl ChainSyncHandler {
                     }
                 }
 
-                if let Some(item) = response.result.last() {
-                    if let Some(block) = item.block_number {
-                        last_block = max(block + 1, last_block);
-                    }
-                }
-
                 if (results_count as u32) < offset {
                     info!("[DAEMON_SYNC] Reached end of results for OPENSTORE (got {} < {})", results_count, offset);
                     break;
@@ -217,12 +209,12 @@ impl ChainSyncHandler {
             let _ = self.batch_repo.save_batch(
                 TransactionBatch {
                     from_block_number: from_block as i64,
-                    to_block_number: last_block as i64,
+                    to_block_number: last_block_number as i64,
                     status: TransactionStatus::Confirmed,
                 }
             ).await;
 
-            from_block = max(from_block + 1, last_block);
+            from_block = last_block_number;
 
             info!("[DAEMON_SYNC] Events synced, next block: {}", from_block);
             sleep(self.empty_timeout).await;
