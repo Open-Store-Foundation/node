@@ -26,6 +26,10 @@ use tokio::time::sleep;
 use tracing::{error, info, warn};
 use client_tg::{tg_alert, tg_msg};
 use net_client::node::watcher::TxWorkaround;
+use service_graph::client::GraphClient;
+use crate::data::repo::object_repo::ObjectRepo;
+use crate::data::models::NewAsset;
+use crate::data::id::{CategoryId, PlatformId};
 
 pub struct ChainSyncHandler {
     store_created_block: u64,
@@ -34,6 +38,8 @@ pub struct ChainSyncHandler {
     empty_timeout: Duration,
     eth: Arc<Web3Provider>,
     ethscan: Arc<EthScanClient>,
+	graph: Arc<GraphClient>,
+	object_repo: Arc<ObjectRepo>,
     batch_repo: Arc<BatchRepo>,
     sync_finished: Arc<SyncFinishedHandler>,
     new_request: Arc<NewRequestHandler>,
@@ -48,15 +54,17 @@ impl ChainSyncHandler {
         filter_block_threshold: u64,
         retry_timeout: Duration,
         empty_timeout: Duration,
-        eth: Arc<Web3Provider>,
-        ethscan: Arc<EthScanClient>,
+		eth: Arc<Web3Provider>,
+		ethscan: Arc<EthScanClient>,
+		graph: Arc<GraphClient>,
+		object_repo: Arc<ObjectRepo>,
         batch_repo: Arc<BatchRepo>,
         sync_finished: Arc<SyncFinishedHandler>,
         new_request: Arc<NewRequestHandler>,
         block_finalized: Arc<BlockFinalizedHandler>,
         add_to_track: Arc<AddToTrack>,
     ) -> Self {
-        Self { store_created_block, filter_block_threshold, retry_timeout, empty_timeout, eth, ethscan, batch_repo, sync_finished, block_finalized, new_request, add_to_track }
+		Self { store_created_block, filter_block_threshold, retry_timeout, empty_timeout, eth, ethscan, graph, object_repo, batch_repo, sync_finished, block_finalized, new_request, add_to_track }
     }
 
     pub async fn handle(&self, ctx: Arc<DaemonContex>) {
@@ -204,6 +212,19 @@ impl ChainSyncHandler {
                 }
 
                 page += 1;
+            }
+
+            info!("[DAEMON_SYNC] Fetching updated AppAssets since block {}", from_block);
+            match self.graph.fetch_app_assets_since(from_block).await {
+                Ok(apps) => {
+                    match self.object_repo.update_from_graph_list(apps).await {
+                        Ok(updated) => { if updated == 0 { warn!("[DAEMON_SYNC] No existing apps updated from Graph"); } },
+                        Err(e) => { warn!("[DAEMON_SYNC] Graph batch update failed: {}", e); }
+                    }
+                }
+                Err(err) => {
+                    warn!("[DAEMON_SYNC] Graph fetch failed: {}", err);
+                }
             }
 
             let _ = self.batch_repo.save_batch(

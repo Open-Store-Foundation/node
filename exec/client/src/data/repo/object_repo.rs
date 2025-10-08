@@ -8,7 +8,7 @@ use hex::ToHex;
 use tracing::{error, log};
 use codegen_contracts::ext::ToChecksum;
 use core_std::hexer;
-use crate::data::id::ObjTypeId;
+use crate::data::id::{ObjTypeId, CategoryId, PlatformId};
 
 #[derive(Clone)]
 pub struct ObjectRepo {
@@ -242,35 +242,99 @@ impl ObjectRepo {
         Ok(())
     }
 
-    pub async fn update(&self, data: Asset) -> ClientResult<()> {
-        sqlx::query!(
+    pub async fn update_from_graph(&self, data: &NewAsset) -> ClientResult<u64> {
+        let result = sqlx::query!(
             r#"
             UPDATE obj
-            
             SET
                 name = $1,
-                logo = $2,
-                category_id = $3,
-                address = $4,
-                price = $5,
-                type_id = $6,
-                description = $7
-
-            WHERE address = $4
+                package_name = $2,
+                description = $3,
+                category_id = $4,
+                platform_id = $5
+            WHERE address = $6
             "#,
             data.name,
-            data.logo,
-            data.category_id,
+            data.id,
+            data.description.clone().or_empty(),
+            Into::<i32>::into(data.category_id.clone()),
+            Into::<i32>::into(data.platform_id.clone()),
             data.address.lower_checksum(),
-            data.price,
-            data.type_id,
-            data.description,
         )
             .execute(self.pool())
             .await?;
 
-        return Ok(())
+        Ok(result.rows_affected())
     }
+
+    pub async fn update_from_graph_tx(
+        &self,
+        tx: &mut Transaction<'static, Postgres>,
+        data: &NewAsset,
+    ) -> ClientResult<u64> {
+        let result = sqlx::query!(
+            r#"
+            UPDATE obj
+            SET
+                name = $1,
+                package_name = $2,
+                description = $3,
+                category_id = $4,
+                platform_id = $5
+            WHERE address = $6
+            "#,
+            data.name,
+            data.id,
+            data.description.clone().or_empty(),
+            Into::<i32>::into(data.category_id.clone()),
+            Into::<i32>::into(data.platform_id.clone()),
+            data.address.lower_checksum(),
+        )
+            .execute(&mut **tx)
+            .await?;
+
+        Ok(result.rows_affected())
+    }
+
+    pub async fn update_from_graph_list(
+        &self,
+        apps: Vec<service_graph::client::AppAsset>,
+    ) -> ClientResult<u64> {
+        let mut tx = self.start().await?;
+        let mut updated: u64 = 0;
+
+        for app in apps {
+            let category = CategoryId::from(app.categoryId);
+            let platform = PlatformId::from(app.platformId);
+
+            let result = sqlx::query!(
+                r#"
+                UPDATE obj
+                SET
+                    name = $1,
+                    package_name = $2,
+                    description = $3,
+                    category_id = $4,
+                    platform_id = $5
+                WHERE address = $6
+                "#,
+                app.name,
+                app.appId,
+                app.description,
+                Into::<i32>::into(category),
+                Into::<i32>::into(platform),
+                app.id,
+            )
+                .execute(&mut *tx)
+                .await?;
+
+            updated += result.rows_affected();
+        }
+
+        tx.commit().await?;
+        Ok(updated)
+    }
+    
 
     pub async fn delete(&self, del_id: i64) -> ClientResult<u64> {
         let result = sqlx::query!(

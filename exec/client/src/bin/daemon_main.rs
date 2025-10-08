@@ -29,6 +29,7 @@ use net_client::node::provider::Web3ProviderFactory;
 use net_client::node::signer::ValidatorSigner;
 use prost::Message;
 use service_ethscan::client::EthScanClient;
+use service_graph::client::GraphClient;
 use service_ethscan::models::GetLogsParams;
 use service_sc::obj::ScObjService;
 use service_sc::store::ScStoreService;
@@ -96,6 +97,7 @@ async fn main() {
     let web3 = arc!(Web3ProviderFactory::provider(rpc_url, env::chain_id(), &client, pk.wallet()));
 
     let greenfield = arc!(GreenfieldClient::new(client.clone(), env::gf_node_url(), Some(pk.clone())));
+    let graph = arc!(GraphClient::new(client.clone(), env::graph_node_url().parse().expect("Invalid GRAPH_NODE_URL")));
     let store_service = arc!(ScStoreService::new(env::openstore_address(), env::validator_version(), &web3));
     let obj_service = arc!(ScObjService::new(web3.clone()));
     let ethscan_client = arc!(EthScanClient::new(client.clone(), env::chain_id(), env::ethscan_api_key()));
@@ -153,6 +155,8 @@ async fn main() {
             Duration::from_millis(env::sync_timeout_ms()),
             web3.clone(),
             ethscan_client.clone(),
+            graph.clone(),
+            object_repo.clone(),
             batch_repo.clone(),
             sync_finish_handler.clone(),
             req_new_handler.clone(),

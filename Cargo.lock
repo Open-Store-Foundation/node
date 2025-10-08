@@ -1455,6 +1455,7 @@ dependencies = [
  "serde",
  "serde_json",
  "service_ethscan",
+ "service_graph",
  "service_sc",
  "sqlx",
  "thiserror 2.0.12",
@@ -4413,6 +4414,18 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "tracing",
+ "url",
+]
+
+[[package]]
+name = "service_graph"
+version = "0.1.0"
+dependencies = [
+ "net_client",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
  "url",
 ]
 

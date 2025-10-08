@@ -4,6 +4,7 @@ use std::env::VarError;
 use std::str::FromStr;
 
 const GF_NODE_URL: &str = "GF_NODE_URL";
+const GRAPH_NODE_URL: &str = "GRAPH_NODE_URL";
 const ETH_NODE_URL: &str = "ETH_NODE_URL";
 const ETHSCAN_API_KEY: &str = "ETHSCAN_API_KEY";
 
@@ -58,6 +59,12 @@ pub fn gf_node_url_env() -> Result<String, VarError> { env::var(GF_NODE_URL) }
 pub fn gf_node_url() -> String {
     gf_node_url_env()
         .expect("Can't find `GF_NODE_URL` in .env")
+}
+
+pub fn graph_node_url_env() -> Result<String, VarError> { env::var(GRAPH_NODE_URL) }
+pub fn graph_node_url() -> String {
+    graph_node_url_env()
+        .expect("Can't find `GRAPH_NODE_URL` in .env")
 }
 
 pub fn ethscan_api_key_env() -> Result<String, VarError> { env::var(ETHSCAN_API_KEY) }

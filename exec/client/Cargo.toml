@@ -24,6 +24,7 @@ core_std = { workspace = true }
 
 service_sc = { workspace = true }
 service_ethscan = { workspace = true }
+service_graph = { workspace = true }
 
 db_redis = { workspace = true }
 db_psql = { workspace = true }

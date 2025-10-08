@@ -8,6 +8,7 @@ members = [
 
     "data/service/sc",
     "data/service/ethscan",
+    "data/service/graph",
 
     "data/cloud/gf",
 
@@ -45,6 +46,7 @@ net_result = { path = "net/result", version = "0.1.0" }
 
 service_sc = { path = "data/service/sc", version = "0.1.0" }
 service_ethscan = { path = "data/service/ethscan", version = "0.1.0" }
+service_graph = { path = "data/service/graph", version = "0.1.0" }
 
 client_tg = { path = "data/client/tg", version = "0.1.0" }
 
