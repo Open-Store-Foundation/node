@@ -1,5 +1,5 @@
 use crate::daemon::data::object_factory::ObjectFactory;
-use crate::data::models::AssetlinkSync;
+use crate::data::models::{AssetlinkSync, NewAsset, ValidationProof};
 use crate::data::repo::assetlink_repo::AssetlinkRepo;
 use crate::data::repo::error_repo::ErrorRepo;
 use crate::data::repo::object_repo::ObjectRepo;
@@ -13,19 +13,22 @@ use service_sc::store::ScStoreService;
 use std::sync::Arc;
 use tracing::{error, info};
 use codegen_contracts::ext::ToChecksum;
+use crate::util::proof_verifier::ProofVerifier;
 
-pub struct SyncFinishedHandler {
+pub struct SyncFinishedHandlerV0 {
     factory: Arc<ObjectFactory>,
+    verifier: Arc<ProofVerifier>,
     app_provider: Arc<ScObjService>,
     obj_repo: Arc<ObjectRepo>,
     assetlink_repo: Arc<AssetlinkRepo>,
     error_repo: Arc<ErrorRepo>,
 }
 
-impl SyncFinishedHandler {
+impl SyncFinishedHandlerV0 {
     
     pub fn new(
         factory: Arc<ObjectFactory>,
+        verifier: Arc<ProofVerifier>,
         app_provider: Arc<ScObjService>,
         obj_repo: Arc<ObjectRepo>,
         assetlink_repo: Arc<AssetlinkRepo>,
@@ -33,6 +36,7 @@ impl SyncFinishedHandler {
     ) -> Self {
         Self {
             factory,
+            verifier,
             app_provider,
             obj_repo,
             assetlink_repo,
@@ -40,8 +44,9 @@ impl SyncFinishedHandler {
         }
     }
 
-    pub async fn handle(&self, item: &Log) {
+    pub async fn handle(&self, item: &Log) -> (Option<AssetlinkSync>, Option<ValidationProof>) {
         let result = ScAssetLinkService::decode_finalize_log(item.as_ref());
+        
         let (obj_address, status, owner_version) = match result {
             Ok(log) => (log.data.app, log.data.status, log.data.version),
             Err(e) => {
@@ -51,11 +56,11 @@ impl SyncFinishedHandler {
                 }
 
                 error!("[SYNC_FINISH_HANDLER] Failed to decode finalize log: {}", e);
-                return;
+                return (None, None);
             }
         };
 
-        self.handle_internal(item.transaction_hash, obj_address, status.to(), owner_version.to()).await;
+       return self.handle_internal(item.transaction_hash, obj_address, status.to(), owner_version.to()).await;
     }
 
     async fn handle_internal(
@@ -64,57 +69,51 @@ impl SyncFinishedHandler {
         obj_address: Address,
         status: u32,
         owner_version: u64,
-    ) {
+    ) -> (Option<AssetlinkSync>, Option<ValidationProof>) {
         let object_addr = obj_address.lower_checksum();
         let website = match self.app_provider.website(obj_address, owner_version).await {
             Ok(website) => website,
             Err(e) => {
-                error!("[SYNC_FINISH_HANDLER] Failed to get website: {}", e);
+                error!("[SYNC_FINISH_HANDLER] Failed to get website: for asset {} with version {}, error: {}", object_addr, owner_version, e);
                 if let Some(tx_hash) = transaction_hash {
                     let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_with_prefix())
                         .await;
                 }
 
-                return;
+                return (None, None);
             }
         };
+        
+        let proofs_res = self.app_provider.get_owner_proof_v0(obj_address, owner_version).await;
+        let owner_proofs = if let Ok(proofs) = proofs_res {
+            if let Some(proofs) = proofs { // TODO combine let
+                proofs 
+            } else { 
+                error!("[SYNC_FINISH_HANDLER] Failed to get proofs for asset {} with version {}", object_addr, owner_version);
+                return (None, None);      
+            }
+        } else {
+            error!("[SYNC_FINISH_HANDLER] Failed to get proofs for asset {} with version {}", object_addr, owner_version);
+            return (None, None);       
+        };
 
-        let has_obj = self.obj_repo.has_by_address(object_addr.as_ref()).await;
-        if !has_obj {
-            if let Ok(obj) = self.factory.create_obj(obj_address).await {
-                let _ = self.obj_repo.insert_or_update(&obj)
-                    .await;
-            } else {
-                error!("[SYNC_FINISH_HANDLER] Failed to sync obj - {}!", object_addr);
-            };
-        }
+        let result = self.verifier.verify_ownership_proofs_raw(
+            obj_address, &owner_proofs.data.fingerprints, &owner_proofs.proofs, &owner_proofs.certs
+        );
 
+        let proof = ValidationProof {
+            object_address: object_addr.clone(),
+            owner_version,
+            status: result.code(),
+        };
+        
         let verification = AssetlinkSync {
             object_address: object_addr,
-            owner_version,
             domain: website,
+            owner_version,
             status,
         };
-
-        let mut sync = SyncTrier::new(1_000, 1.0, 2);
-        while sync.iterate().await {
-            let result = self.assetlink_repo
-                .insert_assetlink_status(&verification)
-                .await;
-
-            if let Err(e) = result {
-                error!("[SYNC_FINISH_HANDLER] Failed to insert assetlink status: {}", e);
-            } else {
-                break;
-            }
-        }
-
-        if sync.is_failed() {
-            if let Some(tx_hash) = transaction_hash {
-                error!("[SYNC_FINISH_HANDLER] Failed to handle finish sync event!");
-                let _ = self.error_repo.insert_error_tx(tx_hash.encode_hex_with_prefix())
-                    .await;
-            }
-        }
+        
+        return (Some(verification), Some(proof));
     }
 }

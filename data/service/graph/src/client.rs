@@ -2,6 +2,7 @@ use net_client::http::HttpClient;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use url::Url;
+use core_std::url::Localhost;
 
 #[derive(Error, Debug)]
 pub enum GraphError {
@@ -46,18 +47,27 @@ struct GraphResponse {
 pub struct GraphClient {
     client: HttpClient,
     base_url: Url,
+    is_localhost: bool,
 }
 
 const GET_UPDATE_QUERY: &str = "query GetAppAssets($updatedAtBlock: BigInt, $first: Int!, $afterId: ID) { apps: appAssets(where: { updatedAtBlock_gte: $updatedAtBlock, id_gt: $afterId }, orderBy: id, orderDirection: asc, first: $first) { id appId name description protocolId categoryId platformId } }";
 
 impl GraphClient {
     pub fn new(client: HttpClient, base_url: Url) -> Self {
-        Self { client, base_url }
+        Self {
+            client,
+            is_localhost: base_url.is_localhost(),
+            base_url
+        }
     }
 
     pub async fn fetch_app_assets_since(&self, updated_at_block_gte: u64) -> Result<Vec<AppAsset>, GraphError> {
         let mut all = Vec::new();
         let mut last_id: Option<String> = None;
+
+        if self.is_localhost {
+            return Ok(all);
+        }
 
         loop {
             let variables = serde_json::json!({

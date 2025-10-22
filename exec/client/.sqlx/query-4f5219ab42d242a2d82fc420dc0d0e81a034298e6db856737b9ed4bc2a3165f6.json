@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                is_os_verified, is_hidden,\n                price, obj.id, rating, downloads, assetlink_sync.domain as website\n            FROM obj\n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n             \n            WHERE build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.version_code = publishing.version_code\n            AND platform_id = $1\n--             AND type_id = $2\n            \n            ORDER BY downloads DESC\n            LIMIT $2 OFFSET $3\n            ",
+  "query": "\n            SELECT\n                name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                is_os_verified, is_hidden,\n                price, obj.id, rating, downloads, assetlink_sync.domain as website\n            FROM obj\n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1\n             \n            WHERE build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.owner_version = validation_proof.owner_version\n            AND build_request.version_code = publishing.version_code\n            AND platform_id = $1\n            AND category_id = $2\n\n            ORDER BY downloads DESC\n            LIMIT $3 OFFSET $4\n            ",
   "describe": {
     "columns": [
       {
@@ -82,6 +82,7 @@
     "parameters": {
       "Left": [
         "Int4",
+        "Int4",
         "Int8",
         "Int8"
       ]
@@ -104,5 +105,5 @@
       false
     ]
   },
-  "hash": "904becb251721c120152af4653fbfe9f5ee352f6f1dd6f30671327b9428121f4"
+  "hash": "4f5219ab42d242a2d82fc420dc0d0e81a034298e6db856737b9ed4bc2a3165f6"
 }

@@ -1,4 +1,4 @@
-use crate::daemon::data::obj_info_provider::DaemonFactory;
+use crate::daemon::data::object_factory::ObjectFactory;
 use crate::data::id::TrackId;
 use crate::data::repo::error_repo::ErrorRepo;
 use crate::data::repo::object_repo::ObjectRepo;
@@ -15,7 +15,7 @@ use tracing::{error, info};
 use codegen_contracts::ext::ToChecksum;
 
 pub struct AddToTrack {
-    factory: Arc<DaemonFactory>,
+    factory: Arc<ObjectFactory>,
     obj_repo: Arc<ObjectRepo>,
     publishing_repo: Arc<PublishingRepo>,
     error_repo: Arc<ErrorRepo>,
@@ -24,7 +24,7 @@ pub struct AddToTrack {
 impl AddToTrack {
 
     pub fn new(
-        factory: Arc<DaemonFactory>,
+        factory: Arc<ObjectFactory>,
         obj_repo: Arc<ObjectRepo>,
         publishing_repo: Arc<PublishingRepo>,
         error_repo: Arc<ErrorRepo>,

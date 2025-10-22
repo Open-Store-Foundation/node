@@ -2,54 +2,9 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_developer",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "_id",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "_name",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "_description",
-        "type": "string"
-      },
-      {
-        "internalType": "uint16",
-        "name": "_protocolId",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
-        "name": "_platformId",
-        "type": "uint16"
-      },
-      {
-        "internalType": "uint16",
-        "name": "_categoryId",
-        "type": "uint16"
-      },
-      {
-        "internalType": "address[]",
-        "name": "_plugins",
-        "type": "address[]"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "_data",
-        "type": "bytes[]"
-      },
-      {
-        "internalType": "bytes4[][]",
-        "name": "_selectors",
-        "type": "bytes4[][]"
+        "internalType": "uint256",
+        "name": "_verificationAmount",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
@@ -63,7 +18,7 @@
         "type": "uint32"
       }
     ],
-    "name": "AppError",
+    "name": "AssetlinksOracleError",
     "type": "error"
   },
   {
@@ -75,17 +30,6 @@
       }
     ],
     "name": "MulticallUnauthorizedAccount",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "OwnableDelegateUnauthorizedAccount",
     "type": "error"
   },
   {
@@ -115,12 +59,24 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "uint16",
-        "name": "categoryId",
-        "type": "uint16"
+        "internalType": "address",
+        "name": "app",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "version",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "requestId",
+        "type": "uint256"
       }
     ],
-    "name": "AppAssetCategoryUpdated",
+    "name": "EnqueueVerification",
     "type": "event"
   },
   {
@@ -128,44 +84,24 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "string",
-        "name": "content",
-        "type": "string"
-      }
-    ],
-    "name": "AppAssetDescriptionUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [],
-    "name": "AppAssetFullInfoUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
+        "internalType": "address",
+        "name": "app",
+        "type": "address"
+      },
       {
         "indexed": false,
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      }
-    ],
-    "name": "AppAssetNameUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
+        "internalType": "uint256",
+        "name": "version",
+        "type": "uint256"
+      },
       {
         "indexed": false,
-        "internalType": "uint16",
-        "name": "platformId",
-        "type": "uint16"
+        "internalType": "uint256",
+        "name": "status",
+        "type": "uint256"
       }
     ],
-    "name": "AppAssetPlatformUpdated",
+    "name": "FinalizeVerification",
     "type": "event"
   },
   {
@@ -215,26 +151,120 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "delegateOwner",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "obj",
         "type": "address"
       }
     ],
-    "stateMutability": "view",
+    "name": "enqueue",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "obj",
+        "type": "address"
+      }
+    ],
+    "name": "enqueue",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "requestId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "status",
+        "type": "uint256"
+      }
+    ],
+    "name": "finish",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "getCategory",
+    "name": "getContractState",
     "outputs": [
       {
-        "internalType": "uint16",
+        "internalType": "uint256",
         "name": "",
-        "type": "uint16"
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "obj",
+        "type": "address"
+      }
+    ],
+    "name": "getLastAssetStatus",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "getLastVerifiedAssetVersion",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -242,96 +272,12 @@
   },
   {
     "inputs": [],
-    "name": "getDescription",
+    "name": "getVerificationAmount",
     "outputs": [
       {
-        "internalType": "string",
+        "internalType": "uint256",
         "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getGeneralInfo",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "string",
-            "name": "id",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "description",
-            "type": "string"
-          },
-          {
-            "internalType": "uint16",
-            "name": "protocolId",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint16",
-            "name": "categoryId",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint16",
-            "name": "platformId",
-            "type": "uint16"
-          }
-        ],
-        "internalType": "struct AppGeneralInfo",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getId",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getName",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getProtocol",
-    "outputs": [
-      {
-        "internalType": "uint16",
-        "name": "",
-        "type": "uint16"
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -358,12 +304,38 @@
   },
   {
     "inputs": [],
+    "name": "lastVerifiedRequestId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "multicall",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "nextQueueRequestId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -396,6 +368,30 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "queue",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "version",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -446,51 +442,12 @@
   {
     "inputs": [
       {
-        "internalType": "uint16",
-        "name": "_categoryId",
-        "type": "uint16"
+        "internalType": "uint256",
+        "name": "_verificationAmount",
+        "type": "uint256"
       }
     ],
-    "name": "setCategoryId",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "_description",
-        "type": "string"
-      }
-    ],
-    "name": "setDescription",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "_name",
-        "type": "string"
-      }
-    ],
-    "name": "setName",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint16",
-        "name": "_protocolId",
-        "type": "uint16"
-      }
-    ],
-    "name": "setProtocolId",
+    "name": "setVerificationAmount",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -499,18 +456,36 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "sender",
+        "name": "",
         "type": "address"
-      },
-      {
-        "internalType": "uint16",
-        "name": "_protocolId",
-        "type": "uint16"
       }
     ],
-    "name": "setProtocolId",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "states",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "version",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "status",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct VerificationState",
+        "name": "last",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pendingVersion",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -546,29 +521,6 @@
     "name": "trustedCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "_name",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "_description",
-        "type": "string"
-      },
-      {
-        "internalType": "uint16",
-        "name": "_categoryId",
-        "type": "uint16"
-      }
-    ],
-    "name": "updateGeneralInfo",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

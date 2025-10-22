@@ -16,6 +16,7 @@ pub struct EthScanResponse {
 #[derive(Debug, Clone)]
 pub struct GetLogsParams {
     pub from_block: u64,
+    pub to_block: Option<u64>,
     pub topic0: Option<String>,
     pub address: Option<String>,
     pub page: Option<u32>,

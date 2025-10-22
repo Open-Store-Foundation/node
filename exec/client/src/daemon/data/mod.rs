@@ -1,3 +1,4 @@
 
 pub mod stat_repo;
-pub mod obj_info_provider;
+pub mod object_factory;
+pub mod data_sync;

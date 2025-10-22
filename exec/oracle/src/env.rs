@@ -38,6 +38,8 @@ pub fn assetlink_address() -> Address {
 }
 
 // CONFIG
+pub fn protocol_version() -> u64 { return 0 }
+
 pub fn timeout_sec() -> u64 {
     return 60
 }

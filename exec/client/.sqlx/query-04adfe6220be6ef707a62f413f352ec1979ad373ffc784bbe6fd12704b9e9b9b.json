@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                is_os_verified, is_hidden,\n                price, obj.id, rating, downloads, assetlink_sync.domain as website\n            FROM obj\n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n             \n            WHERE build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.version_code = publishing.version_code\n            AND category_id = $1\n            \n            ORDER BY downloads DESC\n            LIMIT $2 OFFSET $3\n            ",
+  "query": "\n            SELECT\n                name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                is_os_verified, is_hidden,\n                price, obj.id, rating, downloads, assetlink_sync.domain as website\n            FROM obj\n                \n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1\n\n            WHERE build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.owner_version = validation_proof.owner_version\n            AND build_request.version_code = publishing.version_code\n            AND obj.id = $1\n            \n            LIMIT 1\n            ",
   "describe": {
     "columns": [
       {
@@ -81,8 +81,6 @@
     ],
     "parameters": {
       "Left": [
-        "Int4",
-        "Int8",
         "Int8"
       ]
     },
@@ -104,5 +102,5 @@
       false
     ]
   },
-  "hash": "a42c16b46f450959af6aab6dc01d0af9b7ed4edda531055bf95b96f95264eb64"
+  "hash": "04adfe6220be6ef707a62f413f352ec1979ad373ffc784bbe6fd12704b9e9b9b"
 }

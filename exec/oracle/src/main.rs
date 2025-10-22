@@ -74,12 +74,11 @@ async fn main() {
         &app_provider
     ));
     let handler = arc!(OracleHandler::new(
+        env::protocol_version(),
         env::timeout_sec(),
         env::timeout_empty_sec(),
-        &web3,
         &asset_provider,
         &app_provider,
-        &assets,
         &app_verifier
     ));
 

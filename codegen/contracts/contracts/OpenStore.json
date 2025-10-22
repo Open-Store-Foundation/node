@@ -1168,7 +1168,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "validator",
+        "name": "_validator",
         "type": "address"
       }
     ],
@@ -1499,13 +1499,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "bytes",
@@ -1644,19 +1637,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1846,7 +1826,7 @@
       },
       {
         "internalType": "uint64",
-        "name": "version",
+        "name": "validatorVersion",
         "type": "uint64"
       }
     ],

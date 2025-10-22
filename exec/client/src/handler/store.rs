@@ -117,7 +117,10 @@ pub async fn get_chart(
                 Some(cat_id) => {
                     state
                         .object_repo
-                        .chart_by_category(cat_id, params.size, params.offset)
+                        .chart_by_category(
+                            params.platform.into(), cat_id,
+                            params.size, params.offset
+                        )
                         .await
                 }
                 None => {

@@ -1,15 +1,17 @@
 use crate::data::id::{CategoryId, PlatformId, ReqTypeId, TrackId};
-use crate::data::models::{BuildRequest, NewArtifact, NewAsset, NewBuildRequest, Publishing};
+use crate::data::models::{NewArtifact, NewAsset, NewBuildRequest, Publishing};
+use alloy::hex::ToHexExt;
 use alloy::primitives::Address;
+use chrono::DateTime;
 use cloud_gf::client::{GfError, GreenfieldClient};
+use codegen_block::status::ApkValidationStatus;
 use codegen_contracts::ext::ToChecksum;
 use core_std::hexer;
 use net_client::node::result::EthError;
 use service_sc::obj::ScObjService;
 use std::sync::Arc;
-use alloy::hex::ToHexExt;
-use chrono::DateTime;
 use thiserror::Error;
+use tracing::error;
 
 pub type DaemonResult<T> = Result<T, DaemonError>;
 
@@ -22,12 +24,12 @@ pub enum DaemonError {
     Gf(#[from] GfError),
 }
 
-pub struct DaemonFactory {
+pub struct ObjectFactory {
     obj_service: Arc<ScObjService>,
     greenfield: Arc<GreenfieldClient>,
 }
 
-impl DaemonFactory {
+impl ObjectFactory {
 
     pub fn new(obj_service: Arc<ScObjService>, greenfield: Arc<GreenfieldClient>) -> Self {
         Self { obj_service, greenfield }
@@ -47,6 +49,35 @@ impl DaemonFactory {
         };
         
         return publishing;
+    }
+
+    pub fn create_build_request_v0(
+        &self,
+        request_id: u64,
+        obj: Address,
+        track_id: u8,
+        version_code: i64,
+        owner_version: u64,
+        timestamp: Option<u64>
+    ) -> NewBuildRequest {
+        let time = if let Some(time) = timestamp {
+            DateTime::from_timestamp_millis(time as i64)
+        } else {
+            None
+        };
+
+        let build_request = NewBuildRequest {
+            id: request_id as i64,
+            object_address: obj.lower_checksum(),
+            request_type_id: ReqTypeId::AndroidBuild,
+            track_id: TrackId::from(track_id),
+            status: Some(ApkValidationStatus::Success.code() as i32),
+            version_code,
+            owner_version,
+            created_at: time
+        };
+
+        return build_request;
     }
     
     pub fn create_build_request(

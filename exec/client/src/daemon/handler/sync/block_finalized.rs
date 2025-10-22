@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use crate::daemon::data::obj_info_provider::DaemonFactory;
+use crate::daemon::data::object_factory::ObjectFactory;
 use crate::data::id::TrackId;
 use crate::data::models::{BuildRequest, NewAsset, NewBuildRequest, Publishing};
 use crate::data::repo::artifact_repo::ArtifactRepo;
@@ -19,7 +19,7 @@ use tracing::{error, warn, info};
 use codegen_contracts::ext::ToChecksum;
 
 pub struct BlockFinalizedHandler {
-    factory: Arc<DaemonFactory>,
+    factory: Arc<ObjectFactory>,
     store_provider: Arc<ScStoreService>,
     obj_repo: Arc<ObjectRepo>,
     publishing_repo: Arc<PublishingRepo>,
@@ -30,7 +30,7 @@ pub struct BlockFinalizedHandler {
 
 impl BlockFinalizedHandler {
     pub fn new(
-        factory: Arc<DaemonFactory>,
+        factory: Arc<ObjectFactory>,
         store_provider: Arc<ScStoreService>,
         obj_repo: Arc<ObjectRepo>,
         publishing_repo: Arc<PublishingRepo>,

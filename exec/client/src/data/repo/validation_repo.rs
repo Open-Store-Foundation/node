@@ -1,7 +1,6 @@
 use crate::data::id::{ReqTypeId, TrackId};
 use crate::data::models::{BuildRequest, NewBuildRequest};
 use crate::result::ClientResult;
-use alloy::primitives::Address;
 use codegen_contracts::ext::ToChecksum;
 use db_psql::client::PgClient;
 use sqlx::PgPool;

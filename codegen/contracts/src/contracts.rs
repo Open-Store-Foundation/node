@@ -25,7 +25,14 @@ sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
     AppOwnerPluginV1,
-    "./contracts/AppOwnerPluginV5.json"
+    "./contracts/AppOwnerPluginV1.json"
+);
+
+sol!(
+    #[allow(missing_docs)]
+    #[sol(rpc)]
+    AppOwnerPluginV0,
+    "./contracts/AppOwnerPluginV0_2.json"
 );
 
 sol!(
@@ -39,19 +46,33 @@ sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
     AppBuildsPluginV1,
-    "./contracts/AppBuildsPluginV5.json"
+    "./contracts/AppBuildsPluginV1.json"
 );
 
 sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
     AssetlinksOracle,
-    "./contracts/AssetlinksOracleV5.json"
+    "./contracts/AssetlinksOracle.json"
 );
 
 sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
     OpenStore,
-    "./contracts/OpenStoreV6.json"
+    "./contracts/OpenStore.json"
+);
+
+sol!(
+    #[allow(missing_docs)]
+    #[sol(rpc)]
+    OpenStoreV0,
+    "./contracts/OpenStoreV0.json"
+);
+
+sol!(
+    #[allow(missing_docs)]
+    #[sol(rpc)]
+    TrustedMulticall,
+    "./contracts/TrustedMulticall.json"
 );

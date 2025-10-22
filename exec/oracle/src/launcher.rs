@@ -19,7 +19,7 @@ use hex::ToHex;
 use net_client::node::provider::Web3Provider;
 use net_client::node::result::EthResult;
 use service_sc::assetlinks::{AssetlinkStatusCode, ScAssetLinkService, VerificationState};
-use service_sc::obj::{ObjOwnerData, ScObjService};
+use service_sc::obj::{ObjOwnerDataV1, ScObjService};
 use std::cmp::max;
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -42,7 +42,7 @@ enum OracleBuildStage {
     #[display("OwnerData")]
     OwnerData(AppInfo),
     #[display("Verify")]
-    Verify(AppInfo, ObjOwnerData),
+    Verify(AppInfo, ObjOwnerDataV1),
     #[display("Finish")]
     Finish(VerificationState)
 }
@@ -73,12 +73,11 @@ pub type OracleQueue = ActionQueue<u64, OracleEvent>;
 pub type OracleCtx = Context<u64, OracleEvent>;
 
 pub struct OracleHandler {
+    protocol_version: u64,
     timeout: u64,
     empty_timeout: u64,
-    eth: Arc<Web3Provider>,
     asset_provider: Arc<ScAssetLinkService>,
     app_provider: Arc<ScObjService>,
-    assets_provider: Arc<AssetProvider>,
     app_verifier: Arc<AndroidAppVerifier>,
 }
 
@@ -99,20 +98,17 @@ impl EventHandler<u64, OracleEvent> for OracleHandler {
 impl OracleHandler {
 
     pub fn new(
+        oracle_version: u64,
         timeout: u64,
         empty_timeout: u64,
-        eth: &Arc<Web3Provider>,
         asset_provider: &Arc<ScAssetLinkService>,
         app_provider: &Arc<ScObjService>,
-        assets_provider: &Arc<AssetProvider>,
         app_verifier: &Arc<AndroidAppVerifier>
     ) -> Self {
         return Self {
-            timeout, empty_timeout,
-            eth: eth.clone(),
+            protocol_version: oracle_version, timeout, empty_timeout,
             asset_provider: asset_provider.clone(),
             app_provider: app_provider.clone(),
-            assets_provider: assets_provider.clone(),
             app_verifier: app_verifier.clone(),
         };
     }
@@ -210,9 +206,18 @@ impl OracleHandler {
                     OracleBuildStage::OwnerData(ref app_info) => {
                         info!("[ORACLE_POOL] Oracle request stage: {}, {}", stage, request_id);
 
-                        let data = self.app_provider.get_owner_data(
-                            app_info.address, app_info.owner_version.clone()
-                        ).await;
+                        let data = match self.protocol_version {
+                            0 => {
+                                self.app_provider.get_owner_data_v0(
+                                    app_info.address, app_info.owner_version.clone()
+                                ).await
+                            },
+                            _ => {
+                                self.app_provider.get_owner_data_v1(
+                                    app_info.address, app_info.owner_version.clone()
+                                ).await
+                            }
+                        };
 
                         match data {
                             Ok(data) => OracleBuildStage::Verify(app_info.clone(), data),

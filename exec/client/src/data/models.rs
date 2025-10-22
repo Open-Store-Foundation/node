@@ -147,6 +147,13 @@ pub struct AssetlinkSync {
     pub status: u32,
 }
 
+#[derive(Debug, Clone, FromRow)]
+pub struct ValidationProof {
+    pub object_address: String,
+    pub owner_version: u64,
+    pub status: u32,
+}
+
 #[derive(Debug, Clone)]
 pub struct Publishing {
     pub object_address: String,

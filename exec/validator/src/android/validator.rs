@@ -314,13 +314,14 @@ impl AndroidValidator {
     }
 
     // TODO v2 to separated object
+    // TODO actualize ProofVerifier
     async fn verify_ownership_proofs(
         &self,
         target: Address,
         owner_version: u64,
         certs: Vec<X509>,
     ) -> ApkResult<()> {
-        let remote_state = self.obj_service.get_owner_data(target, owner_version)
+        let remote_state = self.obj_service.get_owner_data_v1(target, owner_version)
             .await
             .map_err(|err| ApkValidationStatus::IncorrectEncryptionData)?;
 

@@ -133,6 +133,7 @@ impl PollHandler {
 
         let mut params = GetLogsParams {
             from_block,
+            to_block: None,
             address: Some(checksum_address),
             offset: Some(offset),
             topic0: None,

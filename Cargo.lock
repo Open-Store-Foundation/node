@@ -1635,6 +1635,7 @@ dependencies = [
  "hex",
  "serde",
  "tokio",
+ "url",
 ]
 
 [[package]]
@@ -4421,6 +4422,7 @@ dependencies = [
 name = "service_graph"
 version = "0.1.0"
 dependencies = [
+ "core_std",
  "net_client",
  "reqwest",
  "serde",

@@ -8,6 +8,7 @@ use hex::ToHex;
 use tracing::{error, log};
 use codegen_contracts::ext::ToChecksum;
 use core_std::hexer;
+use service_graph::client::AppAsset;
 use crate::data::id::{ObjTypeId, CategoryId, PlatformId};
 
 #[derive(Clone)]
@@ -51,8 +52,10 @@ impl ObjectRepo {
             INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
             INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
             INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-             
+            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
+
             WHERE build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND build_request.version_code = publishing.version_code
             AND obj.id = $1
             
@@ -68,6 +71,7 @@ impl ObjectRepo {
 
     pub async fn chart_by_category(
         &self,
+        platform_id: i32,
         category_id: i32,
         limit: i64,
         offset: i64,
@@ -84,14 +88,18 @@ impl ObjectRepo {
             INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
             INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
             INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
              
             WHERE build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND build_request.version_code = publishing.version_code
-            AND category_id = $1
-            
+            AND platform_id = $1
+            AND category_id = $2
+
             ORDER BY downloads DESC
-            LIMIT $2 OFFSET $3
+            LIMIT $3 OFFSET $4
             "#,
+            platform_id,
             category_id,
             limit,
             offset
@@ -121,8 +129,10 @@ impl ObjectRepo {
             INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
             INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
             INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
              
             WHERE build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND build_request.version_code = publishing.version_code
             AND platform_id = $1
 --             AND type_id = $2
@@ -180,9 +190,11 @@ impl ObjectRepo {
             INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
             INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
             INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
             
             WHERE build_request.version_code = publishing.version_code
             AND build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND address = $1
             ORDER BY obj.created_at DESC
             
@@ -267,12 +279,14 @@ impl ObjectRepo {
         Ok(result.rows_affected())
     }
 
-    pub async fn update_from_graph_tx(
+    pub async fn update_app_graph(
         &self,
-        tx: &mut Transaction<'static, Postgres>,
-        data: &NewAsset,
-    ) -> ClientResult<u64> {
-        let result = sqlx::query!(
+        app: &AppAsset,
+    ) -> ClientResult<()>  {
+        let category = CategoryId::from(app.categoryId);
+        let platform = PlatformId::from(app.platformId);
+
+        sqlx::query!(
             r#"
             UPDATE obj
             SET
@@ -283,22 +297,22 @@ impl ObjectRepo {
                 platform_id = $5
             WHERE address = $6
             "#,
-            data.name,
-            data.id,
-            data.description.clone().or_empty(),
-            Into::<i32>::into(data.category_id.clone()),
-            Into::<i32>::into(data.platform_id.clone()),
-            data.address.lower_checksum(),
+            app.name,
+            app.appId,
+            app.description,
+            Into::<i32>::into(category),
+            Into::<i32>::into(platform),
+            app.id,
         )
-            .execute(&mut **tx)
+            .execute(self.pool())
             .await?;
 
-        Ok(result.rows_affected())
+        return Ok(())
     }
 
     pub async fn update_from_graph_list(
         &self,
-        apps: Vec<service_graph::client::AppAsset>,
+        apps: Vec<AppAsset>,
     ) -> ClientResult<u64> {
         let mut tx = self.start().await?;
         let mut updated: u64 = 0;

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                is_os_verified, is_hidden,\n                price, obj.id, rating, downloads, assetlink_sync.domain as website\n            FROM obj\n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n            \n            WHERE name ILIKE $1\n            AND build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.version_code = publishing.version_code\n--             AND type_id = $2\n            AND platform_id = $2\n            \n            ORDER BY downloads DESC\n            LIMIT $3 OFFSET $4\n            ",
+  "query": "\n            SELECT\n                name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                is_os_verified, is_hidden,\n                price, obj.id, rating, downloads, assetlink_sync.domain as website\n            FROM obj\n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1\n            \n            WHERE name ILIKE $1\n            AND build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.owner_version = validation_proof.owner_version\n            AND build_request.version_code = publishing.version_code\n            AND platform_id = $2\n--             AND type_id = $2\n            \n            ORDER BY downloads DESC\n            LIMIT $3 OFFSET $4\n            ",
   "describe": {
     "columns": [
       {
@@ -105,5 +105,5 @@
       false
     ]
   },
-  "hash": "55e8cfa4ce5b97ec30cb123807adeb7fa79c832f04aa04c8f377eff38eb402e8"
+  "hash": "3abd6e58e6368ffb5d9a9216569c71874dbd91fc6f3df30230da3806a4b795e9"
 }

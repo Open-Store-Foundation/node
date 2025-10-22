@@ -1,6 +1,6 @@
 use crate::daemon::data::object_factory::ObjectFactory;
-use crate::data::id::{ObjTypeId, ReqTypeId};
-use crate::data::models::NewAsset;
+use crate::data::id::{ObjTypeId, ReqTypeId, TrackId};
+use crate::data::models::{NewArtifact, NewAsset, NewBuildRequest, Publishing};
 use crate::data::repo::artifact_repo::ArtifactRepo;
 use crate::data::repo::error_repo::ErrorRepo;
 use crate::data::repo::object_repo::ObjectRepo;
@@ -21,7 +21,7 @@ use std::sync::Arc;
 use std::u64;
 use tracing::{error, info, warn};
 
-pub struct NewRequestHandler {
+pub struct NewRequestHandlerV0 {
     factory: Arc<ObjectFactory>,
     obj_repo: Arc<ObjectRepo>,
     art_repo: Arc<ArtifactRepo>,
@@ -29,7 +29,7 @@ pub struct NewRequestHandler {
     error_repo: Arc<ErrorRepo>,
 }
 
-impl NewRequestHandler {
+impl NewRequestHandlerV0 {
     
     pub fn new(
         factory: Arc<ObjectFactory>,
@@ -47,7 +47,7 @@ impl NewRequestHandler {
         }
     }
 
-    pub async fn handle(&self, item: &Log) {
+    pub async fn handle(&self, item: &Log) -> (Option<NewBuildRequest>, Option<NewArtifact>, Option<NewAsset>, Option<Publishing>) {
         let result = ScStoreService::decode_new_request(item.as_ref());
 
         let (request_type, obj, request_id, data) = match result {
@@ -64,11 +64,11 @@ impl NewRequestHandler {
                 }
 
                 error!("[NEW_REQ_HANDLER] Can't decode app's event data: {}", e);
-                return;
+                return (None, None, None, None);
             }
         };
 
-        self.handle_internal(request_id, request_type.to(), item.block_timestamp, obj, data.as_ref())
+        return self.handle_internal(request_id, request_type.to(), item.block_timestamp, obj, data.as_ref())
             .await;
     }
 
@@ -79,7 +79,7 @@ impl NewRequestHandler {
         request_time: Option<u64>,
         obj: Address,
         data: &[u8],
-    ) {
+    ) -> (Option<NewBuildRequest>, Option<NewArtifact>, Option<NewAsset>, Option<Publishing>) {
         info!("[NEW_REQ_HANDLER] Start handling...");
         let address = obj.lower_checksum();
         info!("[NEW_REQ_HANDLER] Request type: {}, obj: {}, request id: {}", request_type, address, request_id);
@@ -87,6 +87,7 @@ impl NewRequestHandler {
         let mut res_request = None;
         let mut res_artifact = None;
         let mut res_object = None;
+        let mut res_publishing = None;
 
         let request_type_id = ReqTypeId::from(request_type);
 
@@ -97,12 +98,11 @@ impl NewRequestHandler {
                     Ok(result) => result,
                     Err(e) => {
                         error!("[NEW_REQ_HANDLER] Can't decode AndroidObjRequestData {}", e);
-                        return;
+                        return (None, None, None, None);
                     }
                 };
 
                 let artifact = self.factory.create_artifact(obj, version).await;
-
                 match artifact {
                     Ok(artifact) => {
                         res_artifact = Some(artifact);
@@ -113,9 +113,12 @@ impl NewRequestHandler {
                 }
 
                 let build = self.factory
-                    .create_build_request(request_id, obj, track_id, None, version, owner_version, request_time);
-
+                    .create_build_request_v0(request_id, obj, track_id, version, owner_version, request_time);
                 res_request = Some(build);
+
+                let publishing = self.factory
+                    .create_publishing(obj, TrackId::from(track_id as i32), version);
+                res_publishing = Some(publishing);
             }
             _ => {
                 warn!("[NEW_REQ_HANDLER] Unknown request type: {}", request_type)
@@ -133,29 +136,7 @@ impl NewRequestHandler {
                 }
             }
         }
-        
-        if let Ok(transaction) = self.obj_repo.start().await {
-            if let Some(request) = res_request {
-                if let Err(e) = self.validation_repo.insert_or_update(&request).await {
-                    error!("[NEW_REQ_HANDLER] Can't insert build {}", e);
-                };
-            }
 
-            if let Some(artifact) = res_artifact {
-                if let Err(e) = self.art_repo.insert_artifact(&artifact).await {
-                    error!("[NEW_REQ_HANDLER] Can't insert artifact {}", e);
-                };
-            }
-
-            if let Some(obj) = res_object {
-                if let Err(e) = self.obj_repo.insert_or_update(&obj).await {
-                    error!("[NEW_REQ_HANDLER] Can't insert object {}", e);
-                };
-            }
-
-            if let Err(e) = transaction.commit().await {
-                error!("[NEW_REQ_HANDLER] Can't commit transaction {}", e);
-            };
-        }
+        return (res_request, res_artifact, res_object, res_publishing);
     }
 }

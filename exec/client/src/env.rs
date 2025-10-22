@@ -82,6 +82,10 @@ pub fn chain_id() -> u64 {
         .expect("invalid chain id")
 }
 
+pub fn caip2() -> String {
+    format!("eip155:{}", chain_id())
+}
+
 pub fn validator_pk_env() -> Result<String, VarError> { env::var(WALLET_PK) }
 pub fn validator_pk() -> String {
     validator_pk_env()
@@ -93,6 +97,8 @@ pub fn validator_version() -> u64 {
 }
 
 // Sync
+pub fn protocol_version() -> u64 { return 0 }
+
 pub fn historical_sync_block_env() -> Result<String, VarError> { env::var(HISTORICAL_SYNC_BLOCK) }
 pub fn historical_sync_block() -> u64 {
     return historical_sync_block_env()

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT\n                obj.id, name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                price, rating, downloads, assetlink_sync.domain as website,\n                \n                is_os_verified,\n                COALESCE(assetlink_sync.status = 1, false) AS \"is_ownership_verified!: bool\",\n                COALESCE(build_request.status = 1, false) AS \"is_build_verified!: bool\"\n                \n            FROM obj\n                \n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n            \n            WHERE build_request.version_code = publishing.version_code\n            AND build_request.owner_version = assetlink_sync.owner_version\n            AND address = $1\n            ORDER BY obj.created_at DESC\n            \n            LIMIT 1\n            ",
+  "query": "\n            SELECT\n                obj.id, name, package_name, address, logo, description,\n                type_id, category_id, platform_id,\n                price, rating, downloads, assetlink_sync.domain as website,\n                \n                is_os_verified,\n                COALESCE(assetlink_sync.status = 1, false) AS \"is_ownership_verified!: bool\",\n                COALESCE(build_request.status = 1, false) AS \"is_build_verified!: bool\"\n                \n            FROM obj\n                \n            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 \n            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1\n            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1\n            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1\n            \n            WHERE build_request.version_code = publishing.version_code\n            AND build_request.owner_version = assetlink_sync.owner_version\n            AND build_request.owner_version = validation_proof.owner_version\n            AND address = $1\n            ORDER BY obj.created_at DESC\n            \n            LIMIT 1\n            ",
   "describe": {
     "columns": [
       {
@@ -108,5 +108,5 @@
       null
     ]
   },
-  "hash": "59208ad0d89389586e22cdd53db95d64504bd4a54339db604066162779c84c43"
+  "hash": "bdd3a3bd38cb7fc7b8eff59943426909c0f01deabea374e6fde2dcf71c8db530"
 }

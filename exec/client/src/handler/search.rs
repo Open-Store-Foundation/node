@@ -49,7 +49,6 @@ pub async fn search_objects(
             .search_by_category(
                 &search_term,
                 params.platform_id.into(),
-                params.type_id,
                 value,
                 params.size,
                 params.offset,

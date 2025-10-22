@@ -8,3 +8,4 @@ DROP TABLE IF EXISTS assetlink_sync;
 DROP TABLE IF EXISTS artifact;
 DROP TABLE IF EXISTS obj;
 DROP TABLE IF EXISTS transactions_batch;
+DROP TABLE IF EXISTS validation_proof;

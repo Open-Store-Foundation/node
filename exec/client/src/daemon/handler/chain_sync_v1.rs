@@ -31,7 +31,7 @@ use crate::data::repo::object_repo::ObjectRepo;
 use crate::data::models::NewAsset;
 use crate::data::id::{CategoryId, PlatformId};
 
-pub struct ChainSyncHandler {
+pub struct ChainSyncHandlerV1 {
     store_created_block: u64,
     filter_block_threshold: u64,
     retry_timeout: Duration,
@@ -47,7 +47,7 @@ pub struct ChainSyncHandler {
     add_to_track: Arc<AddToTrack>,
 }
 
-impl ChainSyncHandler {
+impl ChainSyncHandlerV1 {
 
     pub fn new(
         store_created_block: u64,
@@ -68,7 +68,7 @@ impl ChainSyncHandler {
     }
 
     pub async fn handle(&self, ctx: Arc<DaemonContex>) {
-        self.sync_logs1(ctx)
+        self.sync_logs_3rd_party(ctx)
             .await;
     }
 
@@ -76,7 +76,7 @@ impl ChainSyncHandler {
     // RUN
     ///////////
     // TODO Delete when alchemy getLogs polls are ready for production
-    async fn sync_logs1(&self, ctx: Arc<DaemonContex>) {
+    async fn sync_logs_3rd_party(&self, ctx: Arc<DaemonContex>) {
         let next_block_number = match self.batch_repo.get_last_batch().await {
             Ok(block) => match block {
                 Some(batch) => (batch.to_block_number + 1) as u64,
@@ -98,6 +98,7 @@ impl ChainSyncHandler {
         let assetlink_address = env::assetlink_address();
         let mut assetlink_params = GetLogsParams {
             from_block: 0,
+            to_block: None,
             address: Some(assetlink_address.lower_checksum()),
             offset: Some(offset),
 
@@ -116,6 +117,7 @@ impl ChainSyncHandler {
         );
         let mut openstore_params = GetLogsParams {
             from_block: 0,
+            to_block: None,
             address: Some(openstore_address.lower_checksum()),
             offset: Some(offset),
 
@@ -144,7 +146,10 @@ impl ChainSyncHandler {
                 });
 
             assetlink_params.from_block = from_block;
+            assetlink_params.to_block = Some(last_block_number);
+            
             openstore_params.from_block = from_block;
+            openstore_params.to_block = Some(last_block_number);
 
             page = 1;
             loop {
@@ -403,6 +408,7 @@ impl ChainSyncHandler {
 
         let mut params = GetLogsParams {
             from_block,
+            to_block: None,
             address: Some(checksum.clone()),
             offset: Some(offset),
 

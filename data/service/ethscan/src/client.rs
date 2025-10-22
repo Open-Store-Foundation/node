@@ -32,6 +32,11 @@ impl EthScanClient {
             .append_pair("fromBlock", &params.from_block.to_string())
             .append_pair("apikey", &self.api_key);
 
+        if let Some(ref to_block) = params.to_block {
+            url.query_pairs_mut()
+                .append_pair("toBlock", &to_block.to_string());
+        }
+        
         if let Some(ref topic0) = params.topic0 {
             url.query_pairs_mut()
                 .append_pair("topic0", topic0);
