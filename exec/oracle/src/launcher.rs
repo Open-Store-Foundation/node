@@ -206,18 +206,9 @@ impl OracleHandler {
                     OracleBuildStage::OwnerData(ref app_info) => {
                         info!("[ORACLE_POOL] Oracle request stage: {}, {}", stage, request_id);
 
-                        let data = match self.protocol_version {
-                            0 => {
-                                self.app_provider.get_owner_data_v0(
-                                    app_info.address, app_info.owner_version.clone()
-                                ).await
-                            },
-                            _ => {
-                                self.app_provider.get_owner_data_v1(
-                                    app_info.address, app_info.owner_version.clone()
-                                ).await
-                            }
-                        };
+                        let data =self.app_provider.get_owner_data_v0(
+                            app_info.address, app_info.owner_version.clone()
+                        ).await;
 
                         match data {
                             Ok(data) => OracleBuildStage::Verify(app_info.clone(), data),

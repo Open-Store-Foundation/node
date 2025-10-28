@@ -3,7 +3,7 @@ use crate::data::models::{NewArtifact, NewAsset, NewBuildRequest, Publishing};
 use alloy::hex::ToHexExt;
 use alloy::primitives::Address;
 use chrono::DateTime;
-use cloud_gf::client::{GfError, GreenfieldClient};
+use client_gf::client::{GfError, GreenfieldClient};
 use codegen_block::status::ApkValidationStatus;
 use codegen_contracts::ext::ToChecksum;
 use core_std::hexer;
@@ -42,7 +42,7 @@ impl ObjectFactory {
         version: i64,
     ) -> Publishing {
         let publishing = Publishing {
-            object_address: obj.lower_checksum(),
+            asset_address: obj.checksum(),
             track_id,
             version_code: version,
             is_active: true,
@@ -68,7 +68,7 @@ impl ObjectFactory {
 
         let build_request = NewBuildRequest {
             id: request_id as i64,
-            object_address: obj.lower_checksum(),
+            asset_address: obj.checksum(),
             request_type_id: ReqTypeId::AndroidBuild,
             track_id: TrackId::from(track_id),
             status: Some(ApkValidationStatus::Success.code() as i32),
@@ -98,7 +98,7 @@ impl ObjectFactory {
 
         let build_request = NewBuildRequest {
             id: request_id as i64,
-            object_address: obj.lower_checksum(),
+            asset_address: obj.checksum(),
             request_type_id: ReqTypeId::AndroidBuild,
             track_id: TrackId::from(track_id),
             status,
@@ -125,7 +125,7 @@ impl ObjectFactory {
         let new_obj = NewAsset {
             name: general.name,
             id: general.id,
-            address: obj.lower_checksum(),
+            address: obj.checksum(),
             logo: response,
             description: Some(general.description),
             type_id: category.type_id(),
@@ -138,21 +138,23 @@ impl ObjectFactory {
         
         return Ok(new_obj);
     }
-    
+
+    // TODO If filed we should save and try again
+    // TODO Check if artifact is APK
     pub async fn create_artifact(&self, obj: Address, version: i64) -> DaemonResult<NewArtifact> {
         let build = self.obj_service.get_artifact(obj, version)
             .await?;
         
         let obj_hex = hexer::encode_upper_pref(build.referenceId.as_ref());
         let info = self.greenfield.get_object_meta_by_id(obj_hex.as_str())
-            .await?;
+            .await?; // TODO check error, if not found, we should check like failed, we should hide from search
 
         let payload_size = info.object_info.payload_size.parse::<usize>()
             .map_err(|e| DaemonError::Gf(GfError::ResponseFormat))?;
         
         let artifact = NewArtifact {
             object_ref: obj_hex,
-            object_address: obj.lower_checksum(),
+            asset_address: obj.checksum(),
             protocol_id: build.protocolId as i32,
             size: payload_size as i64,
             version_code: build.versionCode.to(),

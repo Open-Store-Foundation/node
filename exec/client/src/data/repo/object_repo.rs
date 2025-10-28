@@ -1,4 +1,4 @@
-use crate::data::models::{NewAsset, Asset, RichObject};
+use crate::data::models::{NewAsset, Asset, RichAsset};
 use crate::result::ClientResult;
 use core_std::empty::Empty;
 use db_psql::client::PgClient;
@@ -49,10 +49,10 @@ impl ObjectRepo {
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
                 
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
 
             WHERE build_request.owner_version = assetlink_sync.owner_version
             AND build_request.owner_version = validation_proof.owner_version
@@ -85,10 +85,10 @@ impl ObjectRepo {
                 is_os_verified, is_hidden,
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
              
             WHERE build_request.owner_version = assetlink_sync.owner_version
             AND build_request.owner_version = validation_proof.owner_version
@@ -126,10 +126,10 @@ impl ObjectRepo {
                 is_os_verified, is_hidden,
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
              
             WHERE build_request.owner_version = assetlink_sync.owner_version
             AND build_request.owner_version = validation_proof.owner_version
@@ -172,9 +172,9 @@ impl ObjectRepo {
     pub async fn find_by_address(
         &self,
         address: &str,
-    ) -> ClientResult<Option<RichObject>> {
+    ) -> ClientResult<Option<RichAsset>> {
         let result = sqlx::query_as!(
-            RichObject,
+            RichAsset,
             r#"
             SELECT
                 obj.id, name, package_name, address, logo, description,
@@ -187,10 +187,10 @@ impl ObjectRepo {
                 
             FROM obj
                 
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
             
             WHERE build_request.version_code = publishing.version_code
             AND build_request.owner_version = assetlink_sync.owner_version
@@ -238,7 +238,7 @@ impl ObjectRepo {
             "#,
             data.name,
             data.id,
-            data.address.lower_checksum(),
+            data.address.checksum(),
             data.logo.clone().or_empty(),
             data.description.clone().or_empty(),
             type_id,
@@ -271,7 +271,7 @@ impl ObjectRepo {
             data.description.clone().or_empty(),
             Into::<i32>::into(data.category_id.clone()),
             Into::<i32>::into(data.platform_id.clone()),
-            data.address.lower_checksum(),
+            data.address.checksum(),
         )
             .execute(self.pool())
             .await?;

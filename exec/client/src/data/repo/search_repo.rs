@@ -36,10 +36,10 @@ impl SearchRepo {
                 is_os_verified, is_hidden,
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
             
             WHERE name ILIKE $1
             AND build_request.owner_version = assetlink_sync.owner_version
@@ -81,10 +81,10 @@ impl SearchRepo {
                 is_os_verified, is_hidden,
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-            INNER JOIN validation_proof ON validation_proof.object_address = obj.address AND validation_proof.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
             
             WHERE name ILIKE $1
             AND build_request.owner_version = assetlink_sync.owner_version

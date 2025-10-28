@@ -14,9 +14,9 @@ use alloy::rpc::types::{Filter, Log};
 use codegen_contracts::ext::ToChecksum;
 use net_client::node::provider::Web3Provider;
 use net_client::node::result::EthError;
-use service_ethscan::client::EthScanClient;
-use service_ethscan::error::EthScanError;
-use service_ethscan::models::GetLogsParams;
+use client_ethscan::client::EthScanClient;
+use client_ethscan::error::EthScanError;
+use client_ethscan::models::GetLogsParams;
 use service_sc::assetlinks::ScAssetLinkService;
 use service_sc::store::ScStoreService;
 use std::collections::HashSet;
@@ -99,7 +99,7 @@ impl ChainSyncHandlerV1 {
         let mut assetlink_params = GetLogsParams {
             from_block: 0,
             to_block: None,
-            address: Some(assetlink_address.lower_checksum()),
+            address: Some(assetlink_address.checksum()),
             offset: Some(offset),
 
             topic0: Some(ScAssetLinkService::SYNC_FINISH_HASH.encode_hex_with_prefix()),
@@ -118,7 +118,7 @@ impl ChainSyncHandlerV1 {
         let mut openstore_params = GetLogsParams {
             from_block: 0,
             to_block: None,
-            address: Some(openstore_address.lower_checksum()),
+            address: Some(openstore_address.checksum()),
             offset: Some(offset),
 
             topic0: None,
@@ -404,7 +404,7 @@ impl ChainSyncHandlerV1 {
         from_block: u64,
     ) -> Result<(), EthScanError> {
         let offset = 1000;
-        let checksum = address.lower_checksum();
+        let checksum = address.checksum();
 
         let mut params = GetLogsParams {
             from_block,

@@ -24,8 +24,6 @@ use tracing::{error, info, warn};
 pub struct NewRequestHandlerV0 {
     factory: Arc<ObjectFactory>,
     obj_repo: Arc<ObjectRepo>,
-    art_repo: Arc<ArtifactRepo>,
-    validation_repo: Arc<ValidationRepo>,
     error_repo: Arc<ErrorRepo>,
 }
 
@@ -34,15 +32,11 @@ impl NewRequestHandlerV0 {
     pub fn new(
         factory: Arc<ObjectFactory>,
         obj_repo: Arc<ObjectRepo>,
-        art_repo: Arc<ArtifactRepo>,
-        validation_repo: Arc<ValidationRepo>,
         error_repo: Arc<ErrorRepo>,
     ) -> Self {
         Self {
             factory,
             obj_repo,
-            art_repo,
-            validation_repo,
             error_repo,
         }
     }
@@ -81,7 +75,7 @@ impl NewRequestHandlerV0 {
         data: &[u8],
     ) -> (Option<NewBuildRequest>, Option<NewArtifact>, Option<NewAsset>, Option<Publishing>) {
         info!("[NEW_REQ_HANDLER] Start handling...");
-        let address = obj.lower_checksum();
+        let address = obj.checksum();
         info!("[NEW_REQ_HANDLER] Request type: {}, obj: {}, request id: {}", request_type, address, request_id);
 
         let mut res_request = None;

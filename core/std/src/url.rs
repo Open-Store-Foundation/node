@@ -14,6 +14,10 @@ impl Localhost for Url {
             if host.ends_with("127.0.0.1") {
                 return true;
             }
+
+            if host.starts_with("192.168.") {
+                return true;
+            }
         }
         
         return false;

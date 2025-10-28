@@ -81,7 +81,7 @@ impl NewRequestHandler {
         data: &[u8],
     ) {
         info!("[NEW_REQ_HANDLER] Start handling...");
-        let address = obj.lower_checksum();
+        let address = obj.checksum();
         info!("[NEW_REQ_HANDLER] Request type: {}, obj: {}, request id: {}", request_type, address, request_id);
 
         let mut res_request = None;

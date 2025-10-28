@@ -40,7 +40,7 @@ async fn main() {
     if !is_debug() {
         let settings = TgClientSettings {
             token: env::tg_token(),
-            client_name: "ORALE".into(),
+            client_name: "ORACLE".into(),
             msg_chat_id: env::info_chat_id(),
             alert_chat_id: env::alert_chat_id(),
         };

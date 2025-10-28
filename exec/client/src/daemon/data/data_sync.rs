@@ -71,31 +71,31 @@ impl DataSyncHandler {
         from_block: u64,
         last_block_number: u64,
     ) {
-        if let Ok(transaction) = self.client.start().await {
+        // if let Ok(transaction) = self.client.start().await {
             for data in new_data.iter() {
                 match data {
                     LogResultData::NewRequest(request, artifact, asset, publish) => {
-                        if let Some(request) = request {
-                            if let Err(e) = self.validation_repo.insert_or_update(&request).await {
-                                error!("[NEW_REQ_HANDLER] Can't insert build for {}: {}", request.object_address, e);
-                            };
-                        }
-
-                        if let Some(artifact) = artifact {
-                            if let Err(e) = self.art_repo.insert_artifact(&artifact).await {
-                                error!("[NEW_REQ_HANDLER] Can't insert artifact for {} with ref {}: {}", artifact.object_address, artifact.object_ref, e);
-                            };
-                        }
-
                         if let Some(obj) = asset {
                             if let Err(e) = self.object_repo.insert_or_update(&obj).await {
                                 error!("[NEW_REQ_HANDLER] Can't insert asset with {}: {}", obj.address, e);
                             };
                         }
 
+                        if let Some(artifact) = artifact {
+                            if let Err(e) = self.art_repo.insert_artifact(&artifact).await {
+                                error!("[NEW_REQ_HANDLER] Can't insert artifact for {} with ref {}: {}", artifact.asset_address, artifact.object_ref, e);
+                            };
+                        }
+
+                        if let Some(request) = request {
+                            if let Err(e) = self.validation_repo.insert_or_update(&request).await {
+                                error!("[NEW_REQ_HANDLER] Can't insert build for {}: {}", request.asset_address, e);
+                            };
+                        }
+
                         if let Some(publish) = publish {
                             if let Err(e) = self.publishing_repo.insert_or_update(&publish).await {
-                                error!("[NEW_REQ_HANDLER] Can't insert publish for {} with track {} and version {}: {}", publish.object_address, publish.track_id, publish.version_code, e);
+                                error!("[NEW_REQ_HANDLER] Can't insert publish for {} with track {} and version {}: {}", publish.asset_address, publish.track_id, publish.version_code, e);
                             };
                         }
                     }
@@ -104,14 +104,16 @@ impl DataSyncHandler {
                             let result = self.assetlink_repo.insert_assetlink_status(&sync).await;
 
                             if let Err(e) = result {
-                                error!("[SYNC_FINISH_HANDLER] Failed to insert assetlink status for asset {} with version {}: {}", sync.object_address, sync.owner_version, e);
-                            } else {
-                                break;
+                                error!("[SYNC_FINISH_HANDLER] Failed to insert assetlink status for asset {} with version {}: {}", sync.asset_address, sync.owner_version, e);
                             }
                         }
 
                         if let Some(proof) = proof {
-                           let _ = self.assetlink_repo.insert_validation_proof(proof).await;
+                           let err = self.assetlink_repo.insert_validation_proof(proof).await;
+
+                            if let Err(e) = err {
+                                error!("[SYNC_FINISH_HANDLER] Failed to insert proof status for asset {} with version {}: {}", proof.asset_address, proof.owner_version, e);
+                            }
                         }
                     }
                 }
@@ -133,9 +135,9 @@ impl DataSyncHandler {
                 })
                 .await;
 
-            if let Err(e) = transaction.commit().await {
-                error!("[NEW_REQ_HANDLER] Can't commit transaction {}, from {} | to {}", e, from_block, last_block_number);
-            };
-        }
+            // if let Err(e) = transaction.commit().await {
+            //     error!("[NEW_REQ_HANDLER] Can't commit transaction {}, from {} | to {}", e, from_block, last_block_number);
+            // };
+        // }
     }
 }

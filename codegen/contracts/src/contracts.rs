@@ -31,13 +31,6 @@ sol!(
 sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
-    AppOwnerPluginV0,
-    "./contracts/AppOwnerPluginV0_2.json"
-);
-
-sol!(
-    #[allow(missing_docs)]
-    #[sol(rpc)]
     AppDistributionPluginV1,
     "./contracts/AppDistributionPluginV1.json"
 );

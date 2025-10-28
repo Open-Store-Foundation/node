@@ -7,10 +7,10 @@ members = [
     "exec/validator",
 
     "data/service/sc",
-    "data/service/ethscan",
+    "data/client/ethscan",
     "data/service/graph",
-
-    "data/cloud/gf",
+    "data/service/event",
+    "data/client/gf",
 
     "data/client/tg",
 
@@ -45,12 +45,12 @@ net_client = { path = "net/client", version = "0.1.0" }
 net_result = { path = "net/result", version = "0.1.0" }
 
 service_sc = { path = "data/service/sc", version = "0.1.0" }
-service_ethscan = { path = "data/service/ethscan", version = "0.1.0" }
 service_graph = { path = "data/service/graph", version = "0.1.0" }
+service_event = { path = "data/service/event", version = "0.1.0" }
 
 client_tg = { path = "data/client/tg", version = "0.1.0" }
-
-cloud_gf = { path = "data/cloud/gf", version = "0.1.0" }
+client_ethscan = { path = "data/client/ethscan", version = "0.1.0" }
+client_gf = { path = "data/client/gf", version = "0.1.0" }
 
 db_psql = { path = "data/db/psql", version = "0.1.0" }
 db_kf = { path = "data/db/kf", version = "0.1.0" }

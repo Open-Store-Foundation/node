@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use crate::data::repo::artifact_repo::ArtifactRepo;
+use crate::data::repo::assetlink_repo::AssetlinkRepo;
 use crate::data::repo::category_repo::CategoryRepo;
 use crate::data::repo::object_repo::ObjectRepo;
 use crate::data::repo::publishing_repo::PublishingRepo;
@@ -16,6 +17,7 @@ pub struct ClientState {
     pub search_repo: Arc<SearchRepo>,
     pub review_repo: Arc<ReviewRepo>,
     pub publishing_repo: Arc<PublishingRepo>,
+    pub assetlink_repo: Arc<AssetlinkRepo>,
     pub validation_repo: Arc<ValidationRepo>,
     pub artifact_repo: Arc<ArtifactRepo>,
     pub report_repo: Arc<ReportRepo>,

@@ -23,10 +23,10 @@ impl ReportRepo {
     pub async fn create(&self, new_report: NewReport) -> ClientResult<()> {
         sqlx::query!(
             r#"
-            INSERT INTO report (object_address, email, category_id, subcategory_id, description)
+            INSERT INTO report (asset_address, email, category_id, subcategory_id, description)
             VALUES ($1, $2, $3, $4, $5)
             "#,
-            new_report.object_address.lower_checksum(),
+            new_report.asset_address.checksum(),
             new_report.email,
             new_report.category_id,
             new_report.subcategory_id,
@@ -42,7 +42,7 @@ impl ReportRepo {
         let result = sqlx::query_as!(
             Report,
             r#"
-            SELECT id, object_address, email, category_id, subcategory_id, description
+            SELECT id, asset_address, email, category_id, subcategory_id, description
             FROM report WHERE id = $1
             "#,
             report_id
@@ -56,19 +56,19 @@ impl ReportRepo {
     // Find reports for a specific object (leveraging index)
     pub async fn find_by_object_id(
         &self,
-        object_address: Address,
+        asset_address: Address,
         limit: i64,
         offset: i64,
     ) -> ClientResult<Vec<Report>> {
         let result = sqlx::query_as!(
             Report,
             r#"
-            SELECT id, object_address, email, category_id, subcategory_id, description
+            SELECT id, asset_address, email, category_id, subcategory_id, description
             FROM report
-            WHERE object_address = $1
+            WHERE asset_address = $1
             LIMIT $2 OFFSET $3
             "#,
-            object_address.lower_checksum(),
+            asset_address.checksum(),
             limit,
             offset
         )
@@ -90,7 +90,7 @@ impl ReportRepo {
         let result = sqlx::query_as!(
             Report,
             r#"
-            SELECT id, object_address, email, category_id, subcategory_id, description
+            SELECT id, asset_address, email, category_id, subcategory_id, description
             FROM report
             WHERE email = $1
             LIMIT $2 OFFSET $3

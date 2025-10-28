@@ -28,10 +28,10 @@ impl ReviewRepo {
 
         sqlx::query!(
             r#"
-            INSERT INTO review (object_id, user_id, rating, text)
+            INSERT INTO review (asset_id, user_id, rating, text)
             VALUES ($1, $2, $3, $4)
             "#,
-            new_review.object_id,
+            new_review.asset_id,
             new_review.user_id,
             new_review.rating,
             new_review.text
@@ -46,7 +46,7 @@ impl ReviewRepo {
         let result = sqlx::query_as!(
             Review,
             r#"
-            SELECT id, object_id, user_id, rating, text
+            SELECT id, asset_id, user_id, rating, text
             FROM review WHERE id = $1
             "#,
             review_id
@@ -58,21 +58,21 @@ impl ReviewRepo {
     }
 
     // Find reviews for a specific object (leveraging index)
-    pub async fn find_by_object_id(
+    pub async fn find_by_asset_id(
         &self,
-        object_id: i64,
+        asset_id: i64,
         limit: i64,
         offset: i64,
     ) -> ClientResult<Vec<Review>> {
         let result = sqlx::query_as!(
             Review,
             r#"
-            SELECT id, object_id, user_id, rating, text
+            SELECT id, asset_id, user_id, rating, text
             FROM review
-            WHERE object_id = $1
+            WHERE asset_id = $1
             LIMIT $2 OFFSET $3
             "#,
-            object_id,
+            asset_id,
             limit,
             offset
         )
@@ -92,7 +92,7 @@ impl ReviewRepo {
         let result = sqlx::query_as!(
             Review,
             r#"
-            SELECT id, object_id, user_id, rating, text
+            SELECT id, asset_id, user_id, rating, text
             FROM review
             WHERE user_id = $1
             LIMIT $2 OFFSET $3
@@ -123,7 +123,7 @@ impl ReviewRepo {
     pub async fn delete_by_user_object(&self, usr_id: &str, obj_id: i64) -> ClientResult<u64> {
         let result = sqlx::query!(
             r#"
-            DELETE FROM review WHERE user_id = $1 AND object_id = $2
+            DELETE FROM review WHERE user_id = $1 AND asset_id = $2
             "#,
             usr_id,
             obj_id

@@ -68,7 +68,7 @@ impl AddToTrack {
         track_id: TrackId,
         version_code: i64,
     ) {
-        info!("[ADD_TO_TRACK] Handling log: target - {} | track - {} | version - {}!", target.lower_checksum(), track_id, version_code);
+        info!("[ADD_TO_TRACK] Handling log: target - {} | track - {} | version - {}!", target.checksum(), track_id, version_code);
 
         let mut sync = SyncTrier::new(1_000, 1.0, 2);
         while sync.iterate().await {

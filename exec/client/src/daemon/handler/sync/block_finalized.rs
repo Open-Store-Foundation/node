@@ -142,7 +142,7 @@ impl BlockFinalizedHandler {
             let version = result.object_version;
             let owner_version = result.owner_version;
 
-            let obj_address_str = result.object_address.lower_checksum();
+            let obj_address_str = result.asset_address.checksum();
             let obj_address = Address::from_str(obj_address_str.as_str());
             let obj_address = match obj_address {
                 Ok(obj_address) => obj_address,

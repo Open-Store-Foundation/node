@@ -86,10 +86,9 @@ pub fn caip2() -> String {
     format!("eip155:{}", chain_id())
 }
 
-pub fn validator_pk_env() -> Result<String, VarError> { env::var(WALLET_PK) }
 pub fn validator_pk() -> String {
-    validator_pk_env()
-        .expect("Can't find `WALLET_PK` in .env")
+    // Hardhat PR, we don't need it PK here, just a placeholder
+    return "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".to_string()
 }
 
 pub fn validator_version() -> u64 {
@@ -98,6 +97,7 @@ pub fn validator_version() -> u64 {
 
 // Sync
 pub fn protocol_version() -> u64 { return 0 }
+pub fn api_version() -> u64 { return 1 }
 
 pub fn historical_sync_block_env() -> Result<String, VarError> { env::var(HISTORICAL_SYNC_BLOCK) }
 pub fn historical_sync_block() -> u64 {

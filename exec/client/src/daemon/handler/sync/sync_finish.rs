@@ -62,10 +62,10 @@ impl SyncFinishedHandler {
         &self,
         transaction_hash: Option<TxHash>,
         obj_address: Address,
-        status: u32,
-        owner_version: u64,
+        status: i32,
+        owner_version: i64,
     ) {
-        let object_addr = obj_address.lower_checksum();
+        let object_addr = obj_address.checksum();
         let website = match self.app_provider.website(obj_address, owner_version).await {
             Ok(website) => website,
             Err(e) => {
@@ -90,7 +90,7 @@ impl SyncFinishedHandler {
         }
 
         let verification = AssetlinkSync {
-            object_address: object_addr,
+            asset_address: object_addr,
             owner_version,
             domain: website,
             status,

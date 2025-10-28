@@ -13,11 +13,11 @@ use service_sc::store::ScStoreService;
 use std::sync::Arc;
 use tracing::{error, info};
 use codegen_contracts::ext::ToChecksum;
-use crate::util::proof_verifier::ProofVerifier;
+use crate::util::proof_validator::ProofValidator;
 
 pub struct SyncFinishedHandlerV0 {
     factory: Arc<ObjectFactory>,
-    verifier: Arc<ProofVerifier>,
+    verifier: Arc<ProofValidator>,
     app_provider: Arc<ScObjService>,
     obj_repo: Arc<ObjectRepo>,
     assetlink_repo: Arc<AssetlinkRepo>,
@@ -28,7 +28,7 @@ impl SyncFinishedHandlerV0 {
     
     pub fn new(
         factory: Arc<ObjectFactory>,
-        verifier: Arc<ProofVerifier>,
+        verifier: Arc<ProofValidator>,
         app_provider: Arc<ScObjService>,
         obj_repo: Arc<ObjectRepo>,
         assetlink_repo: Arc<AssetlinkRepo>,
@@ -63,14 +63,15 @@ impl SyncFinishedHandlerV0 {
        return self.handle_internal(item.transaction_hash, obj_address, status.to(), owner_version.to()).await;
     }
 
+    // TODO if filed we should save and try again
     async fn handle_internal(
         &self,
         transaction_hash: Option<TxHash>,
         obj_address: Address,
-        status: u32,
-        owner_version: u64,
+        status: i32,
+        owner_version: i64,
     ) -> (Option<AssetlinkSync>, Option<ValidationProof>) {
-        let object_addr = obj_address.lower_checksum();
+        let object_addr = obj_address.checksum();
         let website = match self.app_provider.website(obj_address, owner_version).await {
             Ok(website) => website,
             Err(e) => {
@@ -98,17 +99,17 @@ impl SyncFinishedHandlerV0 {
         };
 
         let result = self.verifier.verify_ownership_proofs_raw(
-            obj_address, &owner_proofs.data.fingerprints, &owner_proofs.proofs, &owner_proofs.certs
+            obj_address, &owner_proofs.data.fingerprints, &owner_proofs.certs, &owner_proofs.proofs
         );
 
         let proof = ValidationProof {
-            object_address: object_addr.clone(),
+            asset_address: object_addr.clone(),
             owner_version,
-            status: result.code(),
+            status: result.code() as i32,
         };
         
         let verification = AssetlinkSync {
-            object_address: object_addr,
+            asset_address: object_addr,
             domain: website,
             owner_version,
             status,

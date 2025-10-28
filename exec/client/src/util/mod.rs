@@ -1,3 +1,3 @@
 
 pub mod etag;
-pub mod proof_verifier;
+pub mod proof_validator;

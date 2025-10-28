@@ -23,14 +23,15 @@ core_actor = { workspace = true }
 core_std = { workspace = true }
 
 service_sc = { workspace = true }
-service_ethscan = { workspace = true }
+client_ethscan = { workspace = true }
 service_graph = { workspace = true }
+service_event = { workspace = true }
 
 db_redis = { workspace = true }
 db_psql = { workspace = true }
 db_ch = { workspace = true }
 
-cloud_gf = { workspace = true } # TODO v2 daemon only
+client_gf = { workspace = true } # TODO v2 daemon only
 
 # Utils
 chrono.workspace = true

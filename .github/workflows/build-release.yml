@@ -50,12 +50,10 @@ jobs:
         
         cp target/release/daemon-client artifacts/
         cp target/release/api-client artifacts/
-        cp target/release/validator artifacts/
         cp target/release/oracle artifacts/
         
         chmod +x artifacts/daemon-client
         chmod +x artifacts/api-client
-        chmod +x artifacts/validator
         chmod +x artifacts/oracle
         
         ls -la artifacts/
@@ -76,7 +74,6 @@ jobs:
           --latest \
           artifacts/daemon-client \
           artifacts/api-client \
-          artifacts/validator \
           artifacts/oracle
         
         

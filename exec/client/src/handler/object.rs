@@ -1,6 +1,8 @@
 use crate::data::dto::AndroidPublishingResponse;
+use crate::net::headers::{ApiNamedVersion, ServiceHeaders};
 use crate::result::{ClientError, ClientResult};
 use crate::state::ClientState;
+use alloy::transports::http::reqwest::header::HeaderMap;
 use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use codegen_contracts::ext::ToChecksum;
@@ -26,7 +28,7 @@ pub async fn get_object_by_address(
     State(state): State<ClientState>,
     Path(address): Path<String>,
 ) -> ClientResult<impl IntoResponse> {
-    let addr = address.lower_checksum();
+    let addr = address.checksum();
     let object = state.object_repo
         .find_by_address(addr.as_str())
         .await?;
@@ -41,17 +43,29 @@ pub async fn get_object_by_address(
 pub async fn get_object_status_by_address(
     State(state): State<ClientState>,
     Path(address): Path<String>,
+    headers: HeaderMap,
 ) -> ClientResult<impl IntoResponse> {
+    let address = address.checksum();
+    let version = headers.api_version()?;
+
+    let proof = state.assetlink_repo
+        .get_proof_status_by_address(&address)
+        .await?;
+
     let published = state.publishing_repo
         .get_publishing_by_address(&address)
         .await?;
 
-    let reviewing = state
-        .validation_repo.get_requests_by_address(address)
-        .await?;
+    let reviewing = if version.is_protocol_zero() {
+        vec![]
+    } else {
+        state.validation_repo
+            .get_requests_by_address(address)
+            .await?
+    };
 
     let response = AndroidPublishingResponse {
-        published, reviewing
+        published, reviewing, proof
     };
 
     Ok(response_data(response))

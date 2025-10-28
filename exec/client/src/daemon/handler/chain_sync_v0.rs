@@ -1,6 +1,6 @@
+use crate::daemon::data::data_sync::{DataSyncHandler, LogResultData};
 use crate::daemon::handler::sync::add_to_track::AddToTrack;
 use crate::daemon::handler::sync::block_finalized::BlockFinalizedHandler;
-use crate::daemon::data::data_sync::{DataSyncHandler, LogResultData};
 use crate::daemon::handler::sync::new_req::NewRequestHandler;
 use crate::daemon::handler::sync::new_req_v0::NewRequestHandlerV0;
 use crate::daemon::handler::sync::sync_finish::SyncFinishedHandler;
@@ -22,9 +22,9 @@ use codegen_contracts::ext::ToChecksum;
 use net_client::node::provider::Web3Provider;
 use net_client::node::result::EthError;
 use net_client::node::watcher::TxWorkaround;
-use service_ethscan::client::EthScanClient;
-use service_ethscan::error::EthScanError;
-use service_ethscan::models::GetLogsParams;
+use client_ethscan::client::EthScanClient;
+use client_ethscan::error::EthScanError;
+use client_ethscan::models::GetLogsParams;
 use service_graph::client::GraphClient;
 use service_sc::assetlinks::ScAssetLinkService;
 use service_sc::store::ScStoreService;
@@ -34,14 +34,14 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 use tracing::{error, info, warn};
+use service_event::service::EventLogService;
 
 pub struct ChainSyncHandlerV0 {
     store_created_block: u64,
-    filter_block_threshold: u64,
     retry_timeout: Duration,
     empty_timeout: Duration,
     eth: Arc<Web3Provider>,
-    ethscan: Arc<EthScanClient>,
+    log_client: Arc<EventLogService>,
 	graph: Arc<GraphClient>,
     data_sync: Arc<DataSyncHandler>,
     sync_finished: Arc<SyncFinishedHandlerV0>,
@@ -52,17 +52,16 @@ impl ChainSyncHandlerV0 {
 
     pub fn new(
         store_created_block: u64,
-        filter_block_threshold: u64,
         retry_timeout: Duration,
         empty_timeout: Duration,
         eth: Arc<Web3Provider>,
-        ethscan: Arc<EthScanClient>,
+        log_client: Arc<EventLogService>,
         graph: Arc<GraphClient>,
         data_sync: Arc<DataSyncHandler>,
         sync_finished: Arc<SyncFinishedHandlerV0>,
         new_request: Arc<NewRequestHandlerV0>,
     ) -> Self {
-		Self { store_created_block, filter_block_threshold, retry_timeout, empty_timeout, eth, ethscan, graph, data_sync, sync_finished, new_request }
+		Self { store_created_block, retry_timeout, empty_timeout, eth, log_client, graph, data_sync, sync_finished, new_request }
     }
 
     pub async fn handle(&self, ctx: Arc<DaemonContex>) {
@@ -76,7 +75,7 @@ impl ChainSyncHandlerV0 {
     async fn sync_logs_3rd_party(&self, ctx: Arc<DaemonContex>) {
         let next_block_number = match self.data_sync.last_sync_batch().await {
             Ok(block) => match block {
-                Some(batch) => (batch.to_block_number + 1) as u64,
+                Some(batch) => batch.to_block_number as u64,
                 None => self.store_created_block,
             },
             Err(e) => {
@@ -96,7 +95,7 @@ impl ChainSyncHandlerV0 {
         let mut assetlink_params = GetLogsParams {
             from_block: 0,
             to_block: None,
-            address: Some(assetlink_address.lower_checksum()),
+            address: Some(assetlink_address.checksum()),
             offset: Some(offset),
 
             topic0: Some(ScAssetLinkService::SYNC_FINISH_HASH.encode_hex_with_prefix()),
@@ -108,7 +107,7 @@ impl ChainSyncHandlerV0 {
         let mut openstore_params = GetLogsParams {
             from_block: 0,
             to_block: None,
-            address: Some(openstore_address.lower_checksum()),
+            address: Some(openstore_address.checksum()),
             offset: Some(offset),
 
             topic0: Some(ScStoreService::NEW_REQUEST_HASH.encode_hex_with_prefix()),
@@ -140,6 +139,12 @@ impl ChainSyncHandlerV0 {
                     from_block
                 });
 
+            if last_block_number < from_block {
+                info!("[DAEMON_SYNC] No new blocks found, sleeping for 1 sec");
+                sleep(self.empty_timeout).await;
+                continue;
+            }
+
             assetlink_params.from_block = from_block;
             assetlink_params.to_block = Some(last_block_number);
             
@@ -151,7 +156,7 @@ impl ChainSyncHandlerV0 {
                 assetlink_params.page = Some(page);
 
                 info!("[DAEMON_SYNC] Fetching ASSETS logs (with topic) page {} (offset: {})", page, offset);
-                let response = match self.ethscan.get_logs(&assetlink_params).await {
+                let response = match self.log_client.get_logs(&assetlink_params).await {
                     Ok(response) => response,
                     Err(err) => {
                         error!("[DAEMON_SYNC] Error getting ASSETS logs: {}", err);
@@ -181,7 +186,7 @@ impl ChainSyncHandlerV0 {
                 openstore_params.page = Some(page);
 
                 info!("[DAEMON_SYNC] Fetching OPENSTORE logs (with topic) page {} (offset: {})", page, offset);
-                let response = match self.ethscan.get_logs(&openstore_params).await {
+                let response = match self.log_client.get_logs(&openstore_params).await {
                     Ok(response) => response,
                     Err(err) => {
                         error!("[DAEMON_SYNC] Error getting OPENSTORE logs: {}", err);
@@ -222,13 +227,14 @@ impl ChainSyncHandlerV0 {
                     None
                 }
             };
-            
-            self.data_sync.sync(&new_data, &apps, from_block, last_block_number)
-                .await;
-            
-            new_data.clear();
 
-            from_block = last_block_number;
+
+            let next_block = last_block_number + 1;
+            self.data_sync.sync(&new_data, &apps, from_block, next_block)
+                .await;
+
+            new_data.clear();
+            from_block = next_block;
 
             info!("[DAEMON_SYNC] Events synced, next block: {}", from_block);
             sleep(self.empty_timeout).await;
@@ -252,7 +258,7 @@ impl ChainSyncHandlerV0 {
 
             ScStoreService::NEW_REQUEST_HASH => {
                 let result = self.new_request.handle(item).await;
-                Some(LogResultData::NewRequest(result.0, result.1, result.2, None))
+                Some(LogResultData::NewRequest(result.0, result.1, result.2, result.3))
             }
 
             _ => None,

@@ -272,7 +272,7 @@ impl ScStoreService {
             .call()
             .await?;
 
-        info!("Finalization winner {}, voterCounter {}, maxVotes {}, subMaxVotes {}, rest {}", result._0.lower_checksum(), result._1, result._2, result._3, result._4);
+        info!("Finalization winner {}, voterCounter {}, maxVotes {}, subMaxVotes {}, rest {}", result._0.checksum(), result._1, result._2, result._3, result._4);
 
         return Ok(result._0 != Address::ZERO);
     }

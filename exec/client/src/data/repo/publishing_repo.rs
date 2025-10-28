@@ -32,7 +32,7 @@ impl PublishingRepo {
             Publishing,
             r#"
             INSERT INTO publishing (
-                object_address,
+                asset_address,
                 track_id,
                 version_code,
                 is_active
@@ -40,11 +40,11 @@ impl PublishingRepo {
             
             VALUES ($1, $2, $3, $4)
             
-            ON CONFLICT (object_address, track_id) DO UPDATE SET
+            ON CONFLICT (asset_address, track_id) DO UPDATE SET
                 version_code = EXCLUDED.version_code,
                 is_active = EXCLUDED.is_active
             "#,
-            publishing.object_address.lower_checksum(),
+            publishing.asset_address.checksum(),
             track_id,
             publishing.version_code,
             publishing.is_active
@@ -66,7 +66,7 @@ impl PublishingRepo {
                 
                 art.id AS artifact_id_,
                 art.ref_id AS artifact_ref_id,
-                art.object_address AS artifact_object_address,
+                art.asset_address AS artifact_asset_address,
                 art.protocol_id AS artifact_protocol_id,
                 art.size AS artifact_size,
                 art.version_name AS artifact_version_name,
@@ -75,13 +75,13 @@ impl PublishingRepo {
                 art.checksum AS artifact_checksum,
                 br.status AS "status!: i32"
             FROM publishing pub
-                INNER JOIN artifact art ON art.object_address = pub.object_address
-                INNER JOIN obj ON obj.address = pub.object_address
-                INNER JOIN build_request br ON br.object_address = pub.object_address
-            WHERE pub.object_address = $1 AND br.version_code = pub.version_code
+                INNER JOIN artifact art ON art.asset_address = pub.asset_address
+                INNER JOIN obj ON obj.address = pub.asset_address
+                INNER JOIN build_request br ON br.asset_address = pub.asset_address
+            WHERE pub.asset_address = $1 AND br.version_code = pub.version_code
             ORDER BY pub.track_id, br.created_at DESC;
             "#,
-            address.lower_checksum()
+            address.checksum()
         )
             .fetch_all(self.pool())
             .await?;
@@ -91,7 +91,7 @@ impl PublishingRepo {
             let artifact = Artifact {
                 id: row.artifact_id_,
                 ref_id: row.artifact_ref_id,
-                object_address: row.artifact_object_address,
+                asset_address: row.artifact_asset_address,
                 protocol_id: row.artifact_protocol_id,
                 size: row.artifact_size,
                 checksum: row.artifact_checksum,
@@ -101,7 +101,7 @@ impl PublishingRepo {
 
             let publishing_entry = DtoPublishing {
                 id: Some(row.id),
-                object_address: row.object_address,
+                asset_address: row.asset_address,
                 track_id: row.track_id,
                 status: row.status,
                 is_active: row.is_active,
