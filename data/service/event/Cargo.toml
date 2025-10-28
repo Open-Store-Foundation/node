@@ -1,0 +1,22 @@
+[package]
+name = "service_event"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+core_std = { workspace = true }
+net_client = { workspace = true }
+client_ethscan = { workspace = true }
+
+tracing = { workspace = true }
+thiserror = { workspace = true }
+derive_more = { workspace = true }
+tokio = { workspace = true }
+
+url = { workspace = true }
+hex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+alloy = { workspace = true }
+reqwest = { workspace = true }

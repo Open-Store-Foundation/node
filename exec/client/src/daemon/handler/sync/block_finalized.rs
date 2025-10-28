@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use crate::daemon::data::obj_info_provider::DaemonFactory;
+use crate::daemon::data::object_factory::ObjectFactory;
 use crate::data::id::TrackId;
 use crate::data::models::{BuildRequest, NewAsset, NewBuildRequest, Publishing};
 use crate::data::repo::artifact_repo::ArtifactRepo;
@@ -19,7 +19,7 @@ use tracing::{error, warn, info};
 use codegen_contracts::ext::ToChecksum;
 
 pub struct BlockFinalizedHandler {
-    factory: Arc<DaemonFactory>,
+    factory: Arc<ObjectFactory>,
     store_provider: Arc<ScStoreService>,
     obj_repo: Arc<ObjectRepo>,
     publishing_repo: Arc<PublishingRepo>,
@@ -30,7 +30,7 @@ pub struct BlockFinalizedHandler {
 
 impl BlockFinalizedHandler {
     pub fn new(
-        factory: Arc<DaemonFactory>,
+        factory: Arc<ObjectFactory>,
         store_provider: Arc<ScStoreService>,
         obj_repo: Arc<ObjectRepo>,
         publishing_repo: Arc<PublishingRepo>,
@@ -142,7 +142,7 @@ impl BlockFinalizedHandler {
             let version = result.object_version;
             let owner_version = result.owner_version;
 
-            let obj_address_str = result.object_address.lower_checksum();
+            let obj_address_str = result.asset_address.checksum();
             let obj_address = Address::from_str(obj_address_str.as_str());
             let obj_address = match obj_address {
                 Ok(obj_address) => obj_address,

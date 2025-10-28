@@ -3,14 +3,14 @@ use core_std::hexer;
 
 pub trait ToChecksum {
     fn upper_checksum(&self) -> String;
-    fn lower_checksum(&self) -> String;
+    fn checksum(&self) -> String;
 }
 
 impl ToChecksum for Address {
     fn upper_checksum(&self) -> String {
         return hexer::encode_upper_pref(&self)
     }
-    fn lower_checksum(&self) -> String { return hexer::encode_lower_pref(&self) }
+    fn checksum(&self) -> String { return hexer::encode_lower_pref(&self) }
 }
 
 impl ToChecksum for String {
@@ -22,7 +22,7 @@ impl ToChecksum for String {
         return format!("0x{}", self[2..].to_uppercase());
     }
 
-    fn lower_checksum(&self) -> String {
+    fn checksum(&self) -> String {
         if !self.starts_with("0x") {
             return self.to_string();
         }

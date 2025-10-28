@@ -6,6 +6,7 @@ pub mod client;
 
 pub static GLOBAL_TG_CLIENT: OnceCell<TgClient> = OnceCell::new();
 
+// TODO add logs
 pub fn init_with_client(settings: TgClientSettings, client: Client) {
     if GLOBAL_TG_CLIENT.get().is_none() {
         let tg_bot = TgClient::with_client(settings, client);

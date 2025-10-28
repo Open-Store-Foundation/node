@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM review WHERE user_id = $1 AND asset_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dd3387c3da536ceccc837e43e0c99fa760220250d31a0b85c013ce0d52d8138b"
+}

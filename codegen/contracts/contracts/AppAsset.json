@@ -3,11 +3,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_owner",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "_developer",
         "type": "address"
       },
@@ -86,6 +81,17 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableDelegateUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "owner",
         "type": "address"
       }
@@ -103,6 +109,64 @@
     ],
     "name": "OwnableUnauthorizedAccount",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "categoryId",
+        "type": "uint16"
+      }
+    ],
+    "name": "AppAssetCategoryUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "content",
+        "type": "string"
+      }
+    ],
+    "name": "AppAssetDescriptionUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "AppAssetFullInfoUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      }
+    ],
+    "name": "AppAssetNameUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "platformId",
+        "type": "uint16"
+      }
+    ],
+    "name": "AppAssetPlatformUpdated",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -152,12 +216,25 @@
   },
   {
     "inputs": [],
-    "name": "developer",
+    "name": "delegateOwner",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCategory",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "",
+        "type": "uint16"
       }
     ],
     "stateMutability": "view",
@@ -348,13 +425,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "bytes4",
@@ -381,7 +451,7 @@
         "type": "uint16"
       }
     ],
-    "name": "setCategory",
+    "name": "setCategoryId",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -439,19 +509,6 @@
       }
     ],
     "name": "setProtocolId",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

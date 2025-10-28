@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT artifact.id, ref_id, artifact.asset_address, protocol_id, size, version_name, artifact.version_code, artifact.checksum\n            \n            FROM artifact\n            INNER JOIN obj o ON o.id = $1\n            INNER JOIN publishing p ON o.address = p.asset_address\n\n            WHERE p.track_id = $2\n            AND artifact.asset_address = o.address\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "ref_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "asset_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "protocol_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "size",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "version_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "version_code",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "checksum",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "24647526f0176a44a5bbb3d43d10f367f0930fc3d411475d9a382b42181b1651"
+}

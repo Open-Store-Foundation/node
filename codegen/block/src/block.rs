@@ -20,7 +20,7 @@ pub struct ValidationResult {
     #[prost(string, tag="4")]
     pub artifact_ref_id: ::prost::alloc::string::String,
     #[prost(string, tag="5")]
-    pub object_address: ::prost::alloc::string::String,
+    pub asset_address: ::prost::alloc::string::String,
     #[prost(int64, tag="6")]
     pub object_version: i64,
     #[prost(uint64, tag="7")]

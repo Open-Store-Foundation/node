@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE obj\n            SET\n                name = $1,\n                package_name = $2,\n                description = $3,\n                category_id = $4,\n                platform_id = $5\n            WHERE address = $6\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2cb863fc7b19e16eb5ea9af718a138e9d149f99d96b6f76b63d4ec14b70b83f2"
+}

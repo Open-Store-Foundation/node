@@ -1,4 +1,4 @@
-use crate::daemon::handler::chain_sync::ChainSyncHandler;
+use crate::daemon::handler::chain_sync_v0::ChainSyncHandlerV0;
 use async_trait::async_trait;
 use core_actor::{ActionQueue, ActionQueueError, Context, EventHandler, UniqueEvent};
 use derive_more::Display;
@@ -45,11 +45,11 @@ pub type DaemonContex = Context<u64, DaemonAction>;
 
 #[derive(Clone)]
 pub struct DaemonEventHandler {
-    chain: Arc<ChainSyncHandler>,
+    chain: Arc<ChainSyncHandlerV0>,
 }
 
 impl DaemonEventHandler {
-    pub fn new(chain: Arc<ChainSyncHandler>) -> Self {
+    pub fn new(chain: Arc<ChainSyncHandlerV0>) -> Self {
         Self { chain }
     }
 }

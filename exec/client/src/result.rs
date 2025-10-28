@@ -10,7 +10,7 @@ use net_result::response_err;
 use prost::DecodeError;
 use serde_json::json;
 use thiserror::Error;
-use service_ethscan::error::EthScanError;
+use client_ethscan::error::EthScanError;
 
 pub type ClientResult<T> = Result<T, ClientError>;
 

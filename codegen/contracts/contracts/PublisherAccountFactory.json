@@ -101,7 +101,7 @@
   },
   {
     "inputs": [],
-    "name": "DEV_ACCOUNT_PLUGINS",
+    "name": "PUBLISHER_ACCOUNT_PLUGINS",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -123,6 +123,45 @@
         "internalType": "string",
         "name": "name",
         "type": "string"
+      }
+    ],
+    "name": "computeAccountAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "address[]",
+        "name": "addr",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "data",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes4[][]",
+        "name": "selectors",
+        "type": "bytes4[][]"
       }
     ],
     "name": "computeAccountAddress",
@@ -170,25 +209,62 @@
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "address[]",
+        "name": "addr",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "data",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes4[][]",
+        "name": "selectors",
+        "type": "bytes4[][]"
+      }
+    ],
+    "name": "createAccount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "owner",
         "type": "address"
       },
       {
-        "internalType": "bytes32",
-        "name": "publisherId",
-        "type": "bytes32"
-      }
-    ],
-    "name": "getAddressById",
-    "outputs": [
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "address[]",
+        "name": "addr",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "data",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes4[][]",
+        "name": "selectors",
+        "type": "bytes4[][]"
       }
     ],
-    "stateMutability": "view",
+    "name": "createAccount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

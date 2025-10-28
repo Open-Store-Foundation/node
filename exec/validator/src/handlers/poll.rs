@@ -14,8 +14,8 @@ use core_actor::Action;
 use core_std::trier::SyncTrier;
 use derive_more::Display;
 use net_client::node::provider::Web3Provider;
-use service_ethscan::client::EthScanClient;
-use service_ethscan::models::GetLogsParams;
+use client_ethscan::client::EthScanClient;
+use client_ethscan::models::GetLogsParams;
 use std::cmp::max;
 use std::collections::HashSet;
 use prost::Message;
@@ -128,11 +128,12 @@ impl PollHandler {
 
     async fn poll1(&self, from_block: u64, ctx: Arc<ValidationContext>) -> PollResult<PollReady> {
         let offset = env::max_logs_per_request();
-        let checksum_address = self.config.address.lower_checksum();
+        let checksum_address = self.config.address.checksum();
         let topics: HashSet<B256> = HashSet::from_iter(self.config.topics.clone());
 
         let mut params = GetLogsParams {
             from_block,
+            to_block: None,
             address: Some(checksum_address),
             offset: Some(offset),
             topic0: None,
@@ -268,7 +269,7 @@ impl PollHandler {
             return Ok(None)
         }
 
-        info!("[POLL_BUILD] Poll handle request: {}, app: {}", request_id, app.lower_checksum());
+        info!("[POLL_BUILD] Poll handle request: {}, app: {}", request_id, app.checksum());
         let result = self.validator.validate_request(request_type.to(), app, request_id, data.as_ref())
             .await;
         info!("[POLL_BUILD] Request {} validation result: {}", request_id, result.status);

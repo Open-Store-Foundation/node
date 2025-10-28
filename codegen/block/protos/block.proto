@@ -15,7 +15,7 @@ message ValidationResult {
   int32 artifact_protocol = 3;
   string artifact_ref_id = 4;
   
-  string object_address = 5;
+  string asset_address = 5;
   int64 object_version = 6;
   
   uint64 owner_version = 7;

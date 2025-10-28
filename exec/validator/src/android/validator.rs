@@ -6,7 +6,7 @@ use crate::data::validation_repo::ValidationRepo;
 use crate::result::{ValidatorError, ValidatorResult};
 use alloy::dyn_abi::SolType;
 use alloy::primitives::{Address, Bytes};
-use cloud_gf::client::GreenfieldClient;
+use client_gf::client::GreenfieldClient;
 use codegen_block::block::{ValidationProofs, ValidationResult};
 use codegen_block::FileHashAlgo;
 use core_std::trier::SyncTrier;
@@ -133,7 +133,7 @@ impl AndroidValidator {
         data: &[u8],
     ) -> ValidationResult {
         let mut request = ValidationResult::default_with(
-            request_id, request_type, target.lower_checksum()
+            request_id, request_type, target.checksum()
         );
 
         let result = AndroidObjRequestData::abi_decode_sequence(data.as_ref());
@@ -314,13 +314,14 @@ impl AndroidValidator {
     }
 
     // TODO v2 to separated object
+    // TODO actualize ProofVerifier
     async fn verify_ownership_proofs(
         &self,
         target: Address,
         owner_version: u64,
         certs: Vec<X509>,
     ) -> ApkResult<()> {
-        let remote_state = self.obj_service.get_owner_data(target, owner_version)
+        let remote_state = self.obj_service.get_owner_data_v1(target, owner_version)
             .await
             .map_err(|err| ApkValidationStatus::IncorrectEncryptionData)?;
 
@@ -344,7 +345,7 @@ impl AndroidValidator {
             cert_to_hash.insert(hash, item);
         }
 
-        let owner_address = target.lower_checksum();
+        let owner_address = target.checksum();
         for (ref pub_key_hash, ref cert) in cert_to_hash {
             let proof = proofs.get(pub_key_hash)
                 .ok_or_else(|| ApkValidationStatus::ProofNotFound)?;

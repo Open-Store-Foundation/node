@@ -1,4 +1,4 @@
-use crate::data::models::{NewAsset, Asset, RichObject};
+use crate::data::models::{NewAsset, Asset, RichAsset};
 use crate::result::ClientResult;
 use core_std::empty::Empty;
 use db_psql::client::PgClient;
@@ -8,7 +8,8 @@ use hex::ToHex;
 use tracing::{error, log};
 use codegen_contracts::ext::ToChecksum;
 use core_std::hexer;
-use crate::data::id::ObjTypeId;
+use service_graph::client::AppAsset;
+use crate::data::id::{ObjTypeId, CategoryId, PlatformId};
 
 #[derive(Clone)]
 pub struct ObjectRepo {
@@ -48,11 +49,13 @@ impl ObjectRepo {
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
                 
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
-             
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
+
             WHERE build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND build_request.version_code = publishing.version_code
             AND obj.id = $1
             
@@ -68,6 +71,7 @@ impl ObjectRepo {
 
     pub async fn chart_by_category(
         &self,
+        platform_id: i32,
         category_id: i32,
         limit: i64,
         offset: i64,
@@ -81,17 +85,21 @@ impl ObjectRepo {
                 is_os_verified, is_hidden,
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
              
             WHERE build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND build_request.version_code = publishing.version_code
-            AND category_id = $1
-            
+            AND platform_id = $1
+            AND category_id = $2
+
             ORDER BY downloads DESC
-            LIMIT $2 OFFSET $3
+            LIMIT $3 OFFSET $4
             "#,
+            platform_id,
             category_id,
             limit,
             offset
@@ -118,11 +126,13 @@ impl ObjectRepo {
                 is_os_verified, is_hidden,
                 price, obj.id, rating, downloads, assetlink_sync.domain as website
             FROM obj
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
              
             WHERE build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND build_request.version_code = publishing.version_code
             AND platform_id = $1
 --             AND type_id = $2
@@ -162,9 +172,9 @@ impl ObjectRepo {
     pub async fn find_by_address(
         &self,
         address: &str,
-    ) -> ClientResult<Option<RichObject>> {
+    ) -> ClientResult<Option<RichAsset>> {
         let result = sqlx::query_as!(
-            RichObject,
+            RichAsset,
             r#"
             SELECT
                 obj.id, name, package_name, address, logo, description,
@@ -177,12 +187,14 @@ impl ObjectRepo {
                 
             FROM obj
                 
-            INNER JOIN publishing ON publishing.object_address = obj.address AND publishing.track_id = 1 
-            INNER JOIN assetlink_sync ON assetlink_sync.object_address = obj.address AND assetlink_sync.status = 1
-            INNER JOIN build_request ON build_request.object_address = obj.address AND build_request.status = 1
+            INNER JOIN publishing ON publishing.asset_address = obj.address AND publishing.track_id = 1
+            INNER JOIN assetlink_sync ON assetlink_sync.asset_address = obj.address AND assetlink_sync.status = 1
+            INNER JOIN build_request ON build_request.asset_address = obj.address AND build_request.status = 1
+            INNER JOIN validation_proof ON validation_proof.asset_address = obj.address AND validation_proof.status = 1
             
             WHERE build_request.version_code = publishing.version_code
             AND build_request.owner_version = assetlink_sync.owner_version
+            AND build_request.owner_version = validation_proof.owner_version
             AND address = $1
             ORDER BY obj.created_at DESC
             
@@ -226,7 +238,7 @@ impl ObjectRepo {
             "#,
             data.name,
             data.id,
-            data.address.lower_checksum(),
+            data.address.checksum(),
             data.logo.clone().or_empty(),
             data.description.clone().or_empty(),
             type_id,
@@ -242,35 +254,101 @@ impl ObjectRepo {
         Ok(())
     }
 
-    pub async fn update(&self, data: Asset) -> ClientResult<()> {
+    pub async fn update_from_graph(&self, data: &NewAsset) -> ClientResult<u64> {
+        let result = sqlx::query!(
+            r#"
+            UPDATE obj
+            SET
+                name = $1,
+                package_name = $2,
+                description = $3,
+                category_id = $4,
+                platform_id = $5
+            WHERE address = $6
+            "#,
+            data.name,
+            data.id,
+            data.description.clone().or_empty(),
+            Into::<i32>::into(data.category_id.clone()),
+            Into::<i32>::into(data.platform_id.clone()),
+            data.address.checksum(),
+        )
+            .execute(self.pool())
+            .await?;
+
+        Ok(result.rows_affected())
+    }
+
+    pub async fn update_app_graph(
+        &self,
+        app: &AppAsset,
+    ) -> ClientResult<()>  {
+        let category = CategoryId::from(app.categoryId);
+        let platform = PlatformId::from(app.platformId);
+
         sqlx::query!(
             r#"
             UPDATE obj
-            
             SET
                 name = $1,
-                logo = $2,
-                category_id = $3,
-                address = $4,
-                price = $5,
-                type_id = $6,
-                description = $7
-
-            WHERE address = $4
+                package_name = $2,
+                description = $3,
+                category_id = $4,
+                platform_id = $5
+            WHERE address = $6
             "#,
-            data.name,
-            data.logo,
-            data.category_id,
-            data.address.lower_checksum(),
-            data.price,
-            data.type_id,
-            data.description,
+            app.name,
+            app.appId,
+            app.description,
+            Into::<i32>::into(category),
+            Into::<i32>::into(platform),
+            app.id,
         )
             .execute(self.pool())
             .await?;
 
         return Ok(())
     }
+
+    pub async fn update_from_graph_list(
+        &self,
+        apps: Vec<AppAsset>,
+    ) -> ClientResult<u64> {
+        let mut tx = self.start().await?;
+        let mut updated: u64 = 0;
+
+        for app in apps {
+            let category = CategoryId::from(app.categoryId);
+            let platform = PlatformId::from(app.platformId);
+
+            let result = sqlx::query!(
+                r#"
+                UPDATE obj
+                SET
+                    name = $1,
+                    package_name = $2,
+                    description = $3,
+                    category_id = $4,
+                    platform_id = $5
+                WHERE address = $6
+                "#,
+                app.name,
+                app.appId,
+                app.description,
+                Into::<i32>::into(category),
+                Into::<i32>::into(platform),
+                app.id,
+            )
+                .execute(&mut *tx)
+                .await?;
+
+            updated += result.rows_affected();
+        }
+
+        tx.commit().await?;
+        Ok(updated)
+    }
+    
 
     pub async fn delete(&self, del_id: i64) -> ClientResult<u64> {
         let result = sqlx::query!(

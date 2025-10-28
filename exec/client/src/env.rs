@@ -4,6 +4,7 @@ use std::env::VarError;
 use std::str::FromStr;
 
 const GF_NODE_URL: &str = "GF_NODE_URL";
+const GRAPH_NODE_URL: &str = "GRAPH_NODE_URL";
 const ETH_NODE_URL: &str = "ETH_NODE_URL";
 const ETHSCAN_API_KEY: &str = "ETHSCAN_API_KEY";
 
@@ -26,7 +27,7 @@ const DATABASE_URL: &str = "DATABASE_URL";
 // TG
 pub fn tg_token_env() -> Result<String, VarError> { env::var("TG_TOKEN") }
 pub fn tg_token() -> String {
-    info_chat_id_env()
+    tg_token_env()
         .expect("Can't find `TG_TOKEN` in .env")
 }
 
@@ -40,7 +41,7 @@ pub fn info_chat_id() -> i64 {
 
 pub fn alert_chat_id_env() -> Result<String, VarError> { env::var("TG_ALERT_CHAT_ID") }
 pub fn alert_chat_id() -> i64 {
-    chain_id_env()
+    alert_chat_id_env()
         .expect("Can't find `TG_ALERT_CHAT_ID` in .env")
         .parse::<i64>()
         .expect("invalid chain id")
@@ -51,13 +52,19 @@ pub fn alert_chat_id() -> i64 {
 pub fn eth_node_url_env() -> Result<String, VarError> { env::var(ETH_NODE_URL) }
 pub fn eth_node_url() -> String {
     eth_node_url_env()
-        .expect("Can't find `NODE_URL` in .env")
+        .expect("Can't find `ETH_NODE_URL` in .env")
 }
 
 pub fn gf_node_url_env() -> Result<String, VarError> { env::var(GF_NODE_URL) }
 pub fn gf_node_url() -> String {
     gf_node_url_env()
         .expect("Can't find `GF_NODE_URL` in .env")
+}
+
+pub fn graph_node_url_env() -> Result<String, VarError> { env::var(GRAPH_NODE_URL) }
+pub fn graph_node_url() -> String {
+    graph_node_url_env()
+        .expect("Can't find `GRAPH_NODE_URL` in .env")
 }
 
 pub fn ethscan_api_key_env() -> Result<String, VarError> { env::var(ETHSCAN_API_KEY) }
@@ -75,10 +82,13 @@ pub fn chain_id() -> u64 {
         .expect("invalid chain id")
 }
 
-pub fn validator_pk_env() -> Result<String, VarError> { env::var(WALLET_PK) }
+pub fn caip2() -> String {
+    format!("eip155:{}", chain_id())
+}
+
 pub fn validator_pk() -> String {
-    validator_pk_env()
-        .expect("Can't find `WALLET_PK` in .env")
+    // Hardhat PR, we don't need it PK here, just a placeholder
+    return "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80".to_string()
 }
 
 pub fn validator_version() -> u64 {
@@ -86,6 +96,9 @@ pub fn validator_version() -> u64 {
 }
 
 // Sync
+pub fn protocol_version() -> u64 { return 0 }
+pub fn api_version() -> u64 { return 1 }
+
 pub fn historical_sync_block_env() -> Result<String, VarError> { env::var(HISTORICAL_SYNC_BLOCK) }
 pub fn historical_sync_block() -> u64 {
     return historical_sync_block_env()

@@ -1,4 +1,4 @@
-use crate::daemon::data::obj_info_provider::DaemonFactory;
+use crate::daemon::data::object_factory::ObjectFactory;
 use crate::data::models::AssetlinkSync;
 use crate::data::repo::assetlink_repo::AssetlinkRepo;
 use crate::data::repo::error_repo::ErrorRepo;
@@ -15,7 +15,7 @@ use tracing::{error, info};
 use codegen_contracts::ext::ToChecksum;
 
 pub struct SyncFinishedHandler {
-    factory: Arc<DaemonFactory>,
+    factory: Arc<ObjectFactory>,
     app_provider: Arc<ScObjService>,
     obj_repo: Arc<ObjectRepo>,
     assetlink_repo: Arc<AssetlinkRepo>,
@@ -25,7 +25,7 @@ pub struct SyncFinishedHandler {
 impl SyncFinishedHandler {
     
     pub fn new(
-        factory: Arc<DaemonFactory>,
+        factory: Arc<ObjectFactory>,
         app_provider: Arc<ScObjService>,
         obj_repo: Arc<ObjectRepo>,
         assetlink_repo: Arc<AssetlinkRepo>,
@@ -62,10 +62,10 @@ impl SyncFinishedHandler {
         &self,
         transaction_hash: Option<TxHash>,
         obj_address: Address,
-        status: u32,
-        owner_version: u64,
+        status: i32,
+        owner_version: i64,
     ) {
-        let object_addr = obj_address.lower_checksum();
+        let object_addr = obj_address.checksum();
         let website = match self.app_provider.website(obj_address, owner_version).await {
             Ok(website) => website,
             Err(e) => {
@@ -90,7 +90,7 @@ impl SyncFinishedHandler {
         }
 
         let verification = AssetlinkSync {
-            object_address: object_addr,
+            asset_address: object_addr,
             owner_version,
             domain: website,
             status,

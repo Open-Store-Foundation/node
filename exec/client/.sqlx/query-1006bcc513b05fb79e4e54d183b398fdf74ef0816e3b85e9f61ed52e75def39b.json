@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO build_request (\n                id,\n                request_type_id,\n                asset_address,\n                track_id,\n                status,\n                version_code,\n                owner_version,\n                created_at\n            )\n            \n            VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, CURRENT_TIMESTAMP))\n            \n            ON CONFLICT (id) DO UPDATE SET\n                status = EXCLUDED.status\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Int8",
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1006bcc513b05fb79e4e54d183b398fdf74ef0816e3b85e9f61ed52e75def39b"
+}

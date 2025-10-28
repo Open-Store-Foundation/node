@@ -107,16 +107,13 @@ def download_direct_binaries(shared_root: Path, version: str, repo_url: str) -> 
         print("  - Internet connection is working")
     return any_success
 
-def perform_sync(volume_dir_arg: Optional[str], ntag: str, repo_url_arg: Optional[str], sqlite_db_arg: Optional[str], input_path: Optional[str]) -> None:
+def perform_sync(volume_dir: str, ntag: str, repo_url_arg: Optional[str], sqlite_db_arg: Optional[str], input_path: Optional[str]) -> None:
     default_repo = "https://github.com/Open-Store-Foundation/node"
     preset: Dict[str, str] = {}
     if input_path:
         tmp_gen = EnvGenerator(Path("."))
         preset = tmp_gen._parse_env_file(Path(input_path))
-    volume_dir = volume_dir_arg or os.environ.get("VOLUME_DIR")
-    if not volume_dir:
-        print("Error: --volume-dir is required for binary sync (or set VOLUME_DIR)")
-        sys.exit(1)
+
     volume_root = Path(volume_dir).resolve()
     repo_url = repo_url_arg or preset.get("REPO_URL") or default_repo
     sqlite_db = sqlite_db_arg or preset.get("SQLITE_DB") or "bsctest"
@@ -163,10 +160,11 @@ class EnvGenerator:
                 "CHAIN_ID": "97",
                 "ORACLE_ADDRESS": "0F61D8D6c9D6886ac7cba72716E1b98C4379E0f7",
                 "STORE_ADDRESS": "6Edac88EA58168a47ab61836bCbAD0Ac844498A6", 
-                "HISTORICAL_SYNC_BLOCK": "60727665",
+                "HISTORICAL_SYNC_BLOCK": "70385278",
                 "HISTORICAL_SYNC_THRESHOLD": "500",
                 "CONFIRM_COUNT": "1",
                 "GF_NODE_URL": "https://gnfd-testnet-fullnode-tendermint-ap.bnbchain.org",
+                "GRAPH_NODE_URL": "https://bsctest.graph.openstore.foundation",
                 "RUST_LOG": "info",
                 "TX_POLL_TIMEOUT_MS": "5000"
             },
@@ -178,6 +176,7 @@ class EnvGenerator:
                 "HISTORICAL_SYNC_THRESHOLD": "5000",
                 "CONFIRM_COUNT": "0",
                 "GF_NODE_URL": "https://gnfd-testnet-fullnode-tendermint-ap.bnbchain.org",
+                "GRAPH_NODE_URL": "http://127.0.0.1:3001",
                 "RUST_LOG": "info",
                 "TX_POLL_TIMEOUT_MS": "5000"
             }
@@ -260,7 +259,8 @@ class EnvGenerator:
                 "DATABASE_URL": "",
                 # LOG
                 "RUST_LOG": "",
-                "LOG_PATH": ""
+                "LOG_PATH": "",
+                "GRAPH_NODE_URL": ""
             },
             "api-client": {
                 # TELEGRAM
@@ -549,7 +549,7 @@ class EnvGenerator:
                 sections: List[tuple] = [
                     ("# TELEGRAM", ["TG_TOKEN", "TG_INFO_CHAT_ID", "TG_ALERT_CHAT_ID"]),
                     ("# WALLET", ["ADMIN_WALLET_PK", "USER_WALLET_PK"]),
-                    ("# BLOCKCHAIN", ["ETH_NODE_URL", "CHAIN_ID", "GF_NODE_URL", "ETHSCAN_API_KEY"]),
+                    ("# BLOCKCHAIN", ["ETH_NODE_URL", "CHAIN_ID", "GF_NODE_URL", "ETHSCAN_API_KEY", "GRAPH_NODE_URL"]),
                     ("# CONTRACTS", ["ORACLE_ADDRESS", "STORE_ADDRESS"]),
                     ("# SYNC", ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"]),
                     ("# BUILD", ["NODE_VERSION", "REPO_URL"]),
@@ -592,7 +592,7 @@ class EnvGenerator:
         # Define logical blocks
         blocks = {
             "# TELEGRAM": ["TG_TOKEN", "TG_INFO_CHAT_ID", "TG_ALERT_CHAT_ID"],
-            "# BLOCKCHAIN": ["ETH_NODE_URL", "CHAIN_ID", "GF_NODE_URL", "ETHSCAN_API_KEY"],
+            "# BLOCKCHAIN": ["ETH_NODE_URL", "CHAIN_ID", "GF_NODE_URL", "ETHSCAN_API_KEY", "GRAPH_NODE_URL"],
             "# WALLET": ["WALLET_PK"],
             "# CONTRACTS": ["ORACLE_ADDRESS", "STORE_ADDRESS"],
             "# SYNC": ["HISTORICAL_SYNC_THRESHOLD", "HISTORICAL_SYNC_BLOCK", "CONFIRM_COUNT", "TX_POLL_TIMEOUT_MS"],
@@ -909,24 +909,15 @@ Examples:
         return
     
     # For actual generation, config-dir is required
-    config_dir = None
-    if args.config_dir:
-        # Priority 1: Command line argument
-        config_dir = args.config_dir
-    else:
-        # Priority 2: Environment variable
-        env_config_dir = os.environ.get("CONFIG_DIR")
-        if env_config_dir:
-            config_dir = env_config_dir
-            print(f"Using CONFIG_DIR from environment: {config_dir}")
-        else:
-            # Priority 3: Ask user to define
-            print("Error: --config-dir is required for service generation")
-            print("You can either:")
-            print("  1. Use --config-dir argument")
-            print("  2. Set CONFIG_DIR environment variable")
-            parser.print_help()
-            sys.exit(1)
+    config_dir = args.config_dir or os.environ.get("CONFIG_DIR")
+    if not config_dir:
+        print("Error: --config-dir is required for binary sync (or set CONFIG_DIR)")
+        sys.exit(1)
+
+    volume_dir = args.volume_dir or os.environ.get("VOLUME_DIR")
+    if not volume_dir:
+        print("Error: --volume-dir is required for binary sync (or set VOLUME_DIR)")
+        sys.exit(1)
     
     generator = EnvGenerator(Path(config_dir))
     
@@ -940,12 +931,12 @@ Examples:
         if args.output:
             generator.write_output_env(inputs, args.output)
         if inputs.get("NODE_VERSION"):
-            perform_sync(args.volume_dir, inputs.get("NODE_VERSION"), inputs.get("REPO_URL"), inputs.get("SQLITE_DB"), args.input)
+            perform_sync(volume_dir, inputs.get("NODE_VERSION"), inputs.get("REPO_URL"), inputs.get("SQLITE_DB"), args.input)
     else:
         inputs = generator.collect_inputs(args.profile, None, args.input, args.repo_url, args.sqlite_db, args.ntag)
         generator.generate_all(inputs=inputs, profile=args.profile, config_path=args.input, output_path=args.output)
         if inputs.get("NODE_VERSION"):
-            perform_sync(args.volume_dir, inputs.get("NODE_VERSION"), inputs.get("REPO_URL"), inputs.get("SQLITE_DB"), args.input)
+            perform_sync(volume_dir, inputs.get("NODE_VERSION"), inputs.get("REPO_URL"), inputs.get("SQLITE_DB"), args.input)
 
 if __name__ == "__main__":
     main()

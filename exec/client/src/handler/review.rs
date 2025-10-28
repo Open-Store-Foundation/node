@@ -35,7 +35,7 @@ pub async fn get_reviews_for_object(
 
     let reviews = state
         .review_repo
-        .find_by_object_id(asset_id, params.size, params.offset)
+        .find_by_asset_id(asset_id, params.size, params.offset)
         .await?;
 
     Ok(response_data(reviews))
@@ -53,7 +53,7 @@ pub async fn create_review(
         return Err(ClientError::BadInput("User ID cannot be empty".to_string()));
     }
     
-    state.object_repo.find_by_id(payload.object_id)
+    state.object_repo.find_by_id(payload.asset_id)
         .await?;
 
     state.review_repo.create(payload)

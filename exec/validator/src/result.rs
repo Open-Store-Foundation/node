@@ -1,4 +1,4 @@
-use cloud_gf::client::GfError;
+use client_gf::client::GfError;
 use net_client::node::result::EthError;
 use prost::DecodeError;
 use std::io;

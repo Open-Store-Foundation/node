@@ -1,4 +1,4 @@
-use crate::daemon::data::obj_info_provider::DaemonFactory;
+use crate::daemon::data::object_factory::ObjectFactory;
 use crate::data::id::{ObjTypeId, ReqTypeId};
 use crate::data::models::NewAsset;
 use crate::data::repo::artifact_repo::ArtifactRepo;
@@ -22,7 +22,7 @@ use std::u64;
 use tracing::{error, info, warn};
 
 pub struct NewRequestHandler {
-    factory: Arc<DaemonFactory>,
+    factory: Arc<ObjectFactory>,
     obj_repo: Arc<ObjectRepo>,
     art_repo: Arc<ArtifactRepo>,
     validation_repo: Arc<ValidationRepo>,
@@ -32,7 +32,7 @@ pub struct NewRequestHandler {
 impl NewRequestHandler {
     
     pub fn new(
-        factory: Arc<DaemonFactory>,
+        factory: Arc<ObjectFactory>,
         obj_repo: Arc<ObjectRepo>,
         art_repo: Arc<ArtifactRepo>,
         validation_repo: Arc<ValidationRepo>,
@@ -68,7 +68,8 @@ impl NewRequestHandler {
             }
         };
 
-        self.handle_internal(request_id, request_type.to(), item.block_timestamp, obj, data.as_ref()).await;
+        self.handle_internal(request_id, request_type.to(), item.block_timestamp, obj, data.as_ref())
+            .await;
     }
 
     async fn handle_internal(
@@ -80,7 +81,7 @@ impl NewRequestHandler {
         data: &[u8],
     ) {
         info!("[NEW_REQ_HANDLER] Start handling...");
-        let address = obj.lower_checksum();
+        let address = obj.checksum();
         info!("[NEW_REQ_HANDLER] Request type: {}, obj: {}, request id: {}", request_type, address, request_id);
 
         let mut res_request = None;

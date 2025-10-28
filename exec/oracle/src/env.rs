@@ -38,6 +38,8 @@ pub fn assetlink_address() -> Address {
 }
 
 // CONFIG
+pub fn protocol_version() -> u64 { return 0 }
+
 pub fn timeout_sec() -> u64 {
     return 60
 }
@@ -48,7 +50,7 @@ pub fn timeout_empty_sec() -> u64 {
 // TG
 pub fn tg_token_env() -> Result<String, VarError> { env::var("TG_TOKEN") }
 pub fn tg_token() -> String {
-    info_chat_id_env()
+    tg_token_env()
         .expect("Can't find `TG_TOKEN` in .env")
 }
 
@@ -62,7 +64,7 @@ pub fn info_chat_id() -> i64 {
 
 pub fn alert_chat_id_env() -> Result<String, VarError> { env::var("TG_ALERT_CHAT_ID") }
 pub fn alert_chat_id() -> i64 {
-    chain_id_env()
+    alert_chat_id_env()
         .expect("Can't find `TG_ALERT_CHAT_ID` in .env")
         .parse::<i64>()
         .expect("invalid chain id")

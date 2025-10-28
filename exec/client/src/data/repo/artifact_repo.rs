@@ -41,7 +41,7 @@ impl ArtifactRepo {
             
             FROM UNNEST($1::varchar(100)[], $2::bigint[]) AS input(set_address, set_version)
                 
-            LEFT JOIN artifact ON artifact.object_address = input.set_address
+            LEFT JOIN artifact ON artifact.asset_address = input.set_address
                 AND artifact.version_code = input.set_version
             
             WHERE artifact IS NULL
@@ -72,15 +72,15 @@ impl ArtifactRepo {
             Artifact,
             r#"
             INSERT INTO artifact (
-                ref_id, object_address, protocol_id, size, version_name, version_code, checksum
+                ref_id, asset_address, protocol_id, size, version_name, version_code, checksum
             )
             
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             
-            ON CONFLICT (object_address, version_code) DO NOTHING
+            ON CONFLICT (asset_address, version_code) DO NOTHING
             "#,
             data.object_ref,
-            data.object_address,
+            data.asset_address,
             data.protocol_id,
             data.size as i64,
             data.version_name,
@@ -97,14 +97,14 @@ impl ArtifactRepo {
         let result = sqlx::query_as!(
             Artifact,
             r#"
-            SELECT artifact.id, ref_id, artifact.object_address, protocol_id, size, version_name, artifact.version_code, artifact.checksum
+            SELECT artifact.id, ref_id, artifact.asset_address, protocol_id, size, version_name, artifact.version_code, artifact.checksum
             
             FROM artifact
             INNER JOIN obj o ON o.id = $1
-            INNER JOIN publishing p ON o.address = p.object_address
+            INNER JOIN publishing p ON o.address = p.asset_address
 
             WHERE p.track_id = $2
-            AND artifact.object_address = o.address
+            AND artifact.asset_address = o.address
             "#,
             obj_id,
             track_id
@@ -120,7 +120,7 @@ impl ArtifactRepo {
         let result = sqlx::query_as!(
             Artifact,
             r#"
-            SELECT id, size, ref_id, object_address, protocol_id, version_name, version_code, checksum
+            SELECT id, size, ref_id, asset_address, protocol_id, version_name, version_code, checksum
             FROM artifact
             
             WHERE id = $1

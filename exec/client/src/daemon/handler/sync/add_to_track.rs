@@ -1,4 +1,4 @@
-use crate::daemon::data::obj_info_provider::DaemonFactory;
+use crate::daemon::data::object_factory::ObjectFactory;
 use crate::data::id::TrackId;
 use crate::data::repo::error_repo::ErrorRepo;
 use crate::data::repo::object_repo::ObjectRepo;
@@ -15,7 +15,7 @@ use tracing::{error, info};
 use codegen_contracts::ext::ToChecksum;
 
 pub struct AddToTrack {
-    factory: Arc<DaemonFactory>,
+    factory: Arc<ObjectFactory>,
     obj_repo: Arc<ObjectRepo>,
     publishing_repo: Arc<PublishingRepo>,
     error_repo: Arc<ErrorRepo>,
@@ -24,7 +24,7 @@ pub struct AddToTrack {
 impl AddToTrack {
 
     pub fn new(
-        factory: Arc<DaemonFactory>,
+        factory: Arc<ObjectFactory>,
         obj_repo: Arc<ObjectRepo>,
         publishing_repo: Arc<PublishingRepo>,
         error_repo: Arc<ErrorRepo>,
@@ -68,7 +68,7 @@ impl AddToTrack {
         track_id: TrackId,
         version_code: i64,
     ) {
-        info!("[ADD_TO_TRACK] Handling log: target - {} | track - {} | version - {}!", target.lower_checksum(), track_id, version_code);
+        info!("[ADD_TO_TRACK] Handling log: target - {} | track - {} | version - {}!", target.checksum(), track_id, version_code);
 
         let mut sync = SyncTrier::new(1_000, 1.0, 2);
         while sync.iterate().await {

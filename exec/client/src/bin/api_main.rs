@@ -13,9 +13,9 @@ use client::env::{psql_url, redis_url};
 use client::net::etag_handler::EtagHandler;
 use client::state::ClientState;
 use client::{env, handler};
-use cloud_gf::client::GreenfieldClient;
-use cloud_gf::data::ObjectInfo;
-use cloud_gf::proto::{QueryHeadObjectRequest, QueryHeadObjectResponse};
+use client_gf::client::GreenfieldClient;
+use client_gf::data::ObjectInfo;
+use client_gf::proto::{QueryHeadObjectRequest, QueryHeadObjectResponse};
 use core_std::arc;
 use db_psql::client::PgClient;
 use db_redis::cache::RedisCache;
@@ -29,6 +29,7 @@ use axum::http::Method;
 use axum_prometheus::{MetricLayerBuilder, PrometheusMetricLayer};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
+use client::data::repo::assetlink_repo::AssetlinkRepo;
 use core_log::init_tracer;
 use core_std::shutdown::shutdown_signal;
 
@@ -37,10 +38,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting application");
     dotenv().ok();
     let _guard = init_tracer();
-
-    // Optional: Run Migrations (ensure migrations folder exists)
-    // db_client.migrate().await.map_err(ClientError::Migration)?;
-    // info!("Database migrations checked/run.");
 
     info!("Connecting to databases...");
     let pg_client = PgClient::connect(psql_url().as_ref())
@@ -57,6 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let publishing_repo =  arc!(PublishingRepo::new(pg_client.clone()));
     let artifact_repo = arc!(ArtifactRepo::new(pg_client.clone()));
     let object_repo = arc!(ObjectRepo::new(pg_client.clone()));
+    let assetlink_repo = arc!(AssetlinkRepo::new(pg_client.clone()));
     let validation_repo = arc!(ValidationRepo::new(pg_client.clone()));
     
     let state = ClientState {
@@ -67,6 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         review_repo: arc!(ReviewRepo::new(pg_client.clone())),
         artifact_repo: artifact_repo.clone(),
         validation_repo: validation_repo.clone(),
+        assetlink_repo: assetlink_repo.clone(),
         report_repo: arc!(ReportRepo::new(pg_client.clone())),
         etag_handler: arc!(EtagHandler::new(cache)),
     };

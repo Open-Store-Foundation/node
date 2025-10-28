@@ -1,7 +1,6 @@
 use crate::data::id::{ReqTypeId, TrackId};
 use crate::data::models::{BuildRequest, NewBuildRequest};
 use crate::result::ClientResult;
-use alloy::primitives::Address;
 use codegen_contracts::ext::ToChecksum;
 use db_psql::client::PgClient;
 use sqlx::PgPool;
@@ -30,7 +29,7 @@ impl ValidationRepo {
             SELECT
                 id,
                 request_type_id,
-                object_address,
+                asset_address,
                 track_id,
                 status,
                 version_code,
@@ -38,9 +37,9 @@ impl ValidationRepo {
 
             FROM build_request
                 
-            WHERE object_address = $1 AND status = -1;
+            WHERE asset_address = $1 AND status = -1;
             "#,
-            address.lower_checksum()
+            address.checksum()
         )
             .fetch_all(self.pool())
             .await?;
@@ -54,7 +53,7 @@ impl ValidationRepo {
                         request_type_id: ReqTypeId::from(row.request_type_id),
                         track_id: TrackId::from(row.track_id),
                         owner_version: row.owner_version as u64,
-                        object_address: row.object_address,
+                        asset_address: row.asset_address,
                         status: row.status,
                         version_code: row.version_code,
                     }
@@ -74,7 +73,7 @@ impl ValidationRepo {
             INSERT INTO build_request (
                 id,
                 request_type_id,
-                object_address,
+                asset_address,
                 track_id,
                 status,
                 version_code,
@@ -89,7 +88,7 @@ impl ValidationRepo {
             "#,
             new_req.id,
             req_type_id,
-            new_req.object_address.lower_checksum(),
+            new_req.asset_address.checksum(),
             track_id,
             new_req.status,
             new_req.version_code,

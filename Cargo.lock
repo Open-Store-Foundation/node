@@ -1432,8 +1432,9 @@ dependencies = [
  "bytes",
  "chrono",
  "clickhouse",
+ "client_ethscan",
+ "client_gf",
  "client_tg",
- "cloud_gf",
  "codegen_block",
  "codegen_contracts",
  "core_actor",
@@ -1454,7 +1455,8 @@ dependencies = [
  "prost",
  "serde",
  "serde_json",
- "service_ethscan",
+ "service_event",
+ "service_graph",
  "service_sc",
  "sqlx",
  "thiserror 2.0.12",
@@ -1465,17 +1467,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "client_tg"
+name = "client_ethscan"
 version = "0.1.0"
 dependencies = [
- "once_cell",
+ "alloy",
+ "net_client",
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror 2.0.12",
+ "tracing",
+ "url",
 ]
 
 [[package]]
-name = "cloud_gf"
+name = "client_gf"
 version = "0.1.0"
 dependencies = [
  "alloy",
@@ -1492,6 +1498,16 @@ dependencies = [
  "thiserror 2.0.12",
  "tracing",
  "url",
+]
+
+[[package]]
+name = "client_tg"
+version = "0.1.0"
+dependencies = [
+ "once_cell",
+ "reqwest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1634,6 +1650,7 @@ dependencies = [
  "hex",
  "serde",
  "tokio",
+ "url",
 ]
 
 [[package]]
@@ -4399,10 +4416,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "service_ethscan"
+name = "service_event"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "client_ethscan",
  "core_std",
  "derive_more",
  "hex",
@@ -4413,6 +4431,19 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "tracing",
+ "url",
+]
+
+[[package]]
+name = "service_graph"
+version = "0.1.0"
+dependencies = [
+ "core_std",
+ "net_client",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
  "url",
 ]
 
@@ -5492,8 +5523,9 @@ dependencies = [
  "blake3",
  "bytes",
  "chrono",
+ "client_ethscan",
+ "client_gf",
  "client_tg",
- "cloud_gf",
  "codegen_block",
  "codegen_contracts",
  "core_actor",
@@ -5512,7 +5544,6 @@ dependencies = [
  "ring",
  "serde",
  "serde_json",
- "service_ethscan",
  "service_sc",
  "sqlx",
  "thiserror 2.0.12",

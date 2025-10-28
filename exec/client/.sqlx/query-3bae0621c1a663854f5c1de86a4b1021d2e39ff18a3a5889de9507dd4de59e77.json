@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id,\n                request_type_id,\n                asset_address,\n                track_id,\n                status,\n                version_code,\n                owner_version\n\n            FROM build_request\n                \n            WHERE asset_address = $1 AND status = -1;\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "request_type_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "asset_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "track_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "version_code",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "owner_version",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "3bae0621c1a663854f5c1de86a4b1021d2e39ff18a3a5889de9507dd4de59e77"
+}

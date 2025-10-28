@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO publishing (\n                asset_address,\n                track_id,\n                version_code,\n                is_active\n            )\n            \n            VALUES ($1, $2, $3, $4)\n            \n            ON CONFLICT (asset_address, track_id) DO UPDATE SET\n                version_code = EXCLUDED.version_code,\n                is_active = EXCLUDED.is_active\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int4",
+        "Int8",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "87c5e1ca50f3289c88ff0ae2d1a40feb0503b6aa1b169caea51412eae10927b1"
+}

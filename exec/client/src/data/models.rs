@@ -49,7 +49,7 @@ pub struct NewAuthor {
 
 #[derive(Debug, Clone, PartialEq, FromRow, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RichObject {
+pub struct RichAsset {
     pub id: i64,
     pub name: String,
     pub package_name: String,
@@ -141,15 +141,23 @@ pub struct NewAsset {
 
 #[derive(Debug, Clone, FromRow)]
 pub struct AssetlinkSync {
-    pub object_address: String,
+    pub asset_address: String,
     pub domain: String,
-    pub owner_version: u64,
-    pub status: u32,
+    pub owner_version: i64,
+    pub status: i32,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidationProof {
+    pub asset_address: String,
+    pub owner_version: i64,
+    pub status: i32,
 }
 
 #[derive(Debug, Clone)]
 pub struct Publishing {
-    pub object_address: String,
+    pub asset_address: String,
     pub track_id: TrackId,
     pub version_code: i64,
     pub is_active: bool,
@@ -159,7 +167,7 @@ pub struct Publishing {
 pub struct NewBuildRequest {
     pub id: i64,
     pub request_type_id: ReqTypeId,
-    pub object_address: String,
+    pub asset_address: String,
     pub track_id: TrackId,
     pub status: Option<i32>,
     pub version_code: i64,
@@ -172,7 +180,7 @@ pub struct NewBuildRequest {
 pub struct BuildRequest {
     pub id: i64,
     pub request_type_id: ReqTypeId,
-    pub object_address: String,
+    pub asset_address: String,
     pub track_id: TrackId,
     pub status: Option<i32>,
     pub version_code: i64,
@@ -183,7 +191,7 @@ pub struct BuildRequest {
 #[serde(rename_all = "camelCase")]
 pub struct Review {
     pub id: i64, 
-    pub object_id: i64,
+    pub asset_id: i64,
     pub user_id: String,
     pub rating: i32, 
     pub text: Option<String>,
@@ -192,7 +200,7 @@ pub struct Review {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewReview {
-    pub object_id: i64,
+    pub asset_id: i64,
     pub user_id: String,
     pub rating: i32,
     pub text: Option<String>,
@@ -202,7 +210,7 @@ pub struct NewReview {
 #[serde(rename_all = "camelCase")]
 pub struct Report {
     pub id: i64,
-    pub object_address: String,
+    pub asset_address: String,
     pub category_id: i32,
     pub subcategory_id: i32,
     pub email: String,
@@ -212,7 +220,7 @@ pub struct Report {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewReport {
-    pub object_address: String,
+    pub asset_address: String,
     pub category_id: i32,
     pub subcategory_id: i32,
     pub email: String,
@@ -224,7 +232,7 @@ pub struct NewReport {
 pub struct Artifact {
     pub id: i64,
     pub ref_id: String,
-    pub object_address: String,
+    pub asset_address: String,
     pub protocol_id: i32,
     pub size: i64,
     pub version_name: Option<String>,
@@ -236,7 +244,7 @@ pub struct Artifact {
 #[serde(rename_all = "camelCase")]
 pub struct NewArtifact {
     pub object_ref: String,
-    pub object_address: String,
+    pub asset_address: String,
     pub protocol_id: i32,
     pub size: i64,
     pub version_name: Option<String>,
@@ -252,7 +260,7 @@ pub struct Achievement {
     pub id: i32,
     pub name: String,
     pub value: Option<String>,
-    pub object_id: i64,
+    pub asset_id: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -261,7 +269,7 @@ pub struct NewAchievement {
     pub id: i32,
     pub name: String,
     pub value: Option<String>,
-    pub object_id: i64,
+    pub asset_id: i64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -273,13 +281,13 @@ struct Feed {
 #[serde(tag = "type")]
 enum Section {
     #[serde(rename = "banner")]
-    Banner { objects: Vec<Asset> },
+    Banner { assets: Vec<Asset> },
 
     #[serde(rename = "h_list")]
-    HList { objects: Vec<Asset> },
+    HList { assets: Vec<Asset> },
 
     #[serde(rename = "v_list")]
-    VList { objects: Vec<Asset> },
+    VList { assets: Vec<Asset> },
 
     #[serde(rename = "highlight")]
     Highlight { target: Asset },

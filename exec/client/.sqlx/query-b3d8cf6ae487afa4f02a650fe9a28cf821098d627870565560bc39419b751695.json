@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT asset_address, owner_version, status FROM validation_proof\n            WHERE asset_address = $1\n            ORDER BY owner_version\n            DESC\n            LIMIT 1;\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "asset_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "owner_version",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "status",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b3d8cf6ae487afa4f02a650fe9a28cf821098d627870565560bc39419b751695"
+}

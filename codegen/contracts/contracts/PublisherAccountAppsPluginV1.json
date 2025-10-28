@@ -51,6 +51,17 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "account",
         "type": "address"
       }
@@ -95,6 +106,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "APP_PLUGINS",
     "outputs": [
@@ -102,6 +132,65 @@
         "internalType": "bytes32",
         "name": "",
         "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_id",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_description",
+        "type": "string"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_protocolId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_platformId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_categoryId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_plugins",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_data",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes4[][]",
+        "name": "_selectors",
+        "type": "bytes4[][]"
+      }
+    ],
+    "name": "computeAppAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -197,6 +286,64 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "_id",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_description",
+        "type": "string"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_protocolId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_platformId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_categoryId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_plugins",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_data",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes4[][]",
+        "name": "_selectors",
+        "type": "bytes4[][]"
+      }
+    ],
+    "name": "createApp",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "string",
         "name": "_id",
         "type": "string"
@@ -235,6 +382,59 @@
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "_id",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_description",
+        "type": "string"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_protocolId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_platformId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "_categoryId",
+        "type": "uint16"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_plugins",
+        "type": "address[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "_data",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "bytes4[][]",
+        "name": "_selectors",
+        "type": "bytes4[][]"
+      }
+    ],
+    "name": "createApp",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes",
         "name": "data",
         "type": "bytes"
@@ -248,9 +448,9 @@
   {
     "inputs": [
       {
-        "internalType": "string",
-        "name": "id",
-        "type": "string"
+        "internalType": "bytes32",
+        "name": "idHash",
+        "type": "bytes32"
       }
     ],
     "name": "getAppById",
