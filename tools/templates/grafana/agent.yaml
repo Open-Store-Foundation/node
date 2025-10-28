@@ -50,8 +50,8 @@ metrics:
 
               action: keep
 
-        - job_name: 'api-client'
-          metrics_path: /metrics
-          scrape_interval: 60s
-          static_configs:
-            - targets: ['api-client:8080']
+#        - job_name: 'api-client'
+#          metrics_path: /metrics
+#          scrape_interval: 60s
+#          static_configs:
+#            - targets: ['api-client:8080']
