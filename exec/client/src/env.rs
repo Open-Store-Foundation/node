@@ -27,7 +27,7 @@ const DATABASE_URL: &str = "DATABASE_URL";
 // TG
 pub fn tg_token_env() -> Result<String, VarError> { env::var("TG_TOKEN") }
 pub fn tg_token() -> String {
-    info_chat_id_env()
+    tg_token_env()
         .expect("Can't find `TG_TOKEN` in .env")
 }
 
@@ -41,7 +41,7 @@ pub fn info_chat_id() -> i64 {
 
 pub fn alert_chat_id_env() -> Result<String, VarError> { env::var("TG_ALERT_CHAT_ID") }
 pub fn alert_chat_id() -> i64 {
-    chain_id_env()
+    alert_chat_id_env()
         .expect("Can't find `TG_ALERT_CHAT_ID` in .env")
         .parse::<i64>()
         .expect("invalid chain id")
@@ -52,7 +52,7 @@ pub fn alert_chat_id() -> i64 {
 pub fn eth_node_url_env() -> Result<String, VarError> { env::var(ETH_NODE_URL) }
 pub fn eth_node_url() -> String {
     eth_node_url_env()
-        .expect("Can't find `NODE_URL` in .env")
+        .expect("Can't find `ETH_NODE_URL` in .env")
 }
 
 pub fn gf_node_url_env() -> Result<String, VarError> { env::var(GF_NODE_URL) }

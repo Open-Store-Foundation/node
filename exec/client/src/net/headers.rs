@@ -21,11 +21,11 @@ impl ServiceHeaders for HeaderMap {
             .unwrap_or(&DEFAULT_API_VERSION);
 
         let Ok(str) = version.to_str() else {
-            return Err(ClientError::BadInput("X-Api-Version is incorrected!".into()));
+            return Err(ClientError::BadInput("X-Api-Version format is incorrect!".into()));
         };
 
         let Ok(version) = u32::from_str(str) else {
-            return Err(ClientError::BadInput("X-Api-Version is incorrected!".into()));
+            return Err(ClientError::BadInput("X-Api-Version format is incorrect!".into()));
         };
 
         return Ok(version);
