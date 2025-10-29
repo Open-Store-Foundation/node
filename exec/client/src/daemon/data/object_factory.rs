@@ -11,7 +11,7 @@ use net_client::node::result::EthError;
 use service_sc::obj::ScObjService;
 use std::sync::Arc;
 use thiserror::Error;
-use tracing::error;
+use tracing::{error, info};
 
 pub type DaemonResult<T> = Result<T, DaemonError>;
 
@@ -146,8 +146,12 @@ impl ObjectFactory {
             .await?;
         
         let obj_hex = hexer::encode_upper_pref(build.referenceId.as_ref());
+
         let info = self.greenfield.get_object_meta_by_id(obj_hex.as_str())
-            .await?; // TODO check error, if not found, we should check like failed, we should hide from search
+            .await
+            .inspect_err(|e| {
+                info!("[CREATE_ARTIFACT] Can't find artifact for obj_hex: {}", obj_hex);
+            })?; // TODO check error, if not found, we should check like failed, we should hide from search
 
         let payload_size = info.object_info.payload_size.parse::<usize>()
             .map_err(|e| DaemonError::Gf(GfError::ResponseFormat))?;

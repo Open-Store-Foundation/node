@@ -57,7 +57,7 @@ CREATE TABLE build_request (
     owner_version BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE UNIQUE INDEX idx_build_request ON build_request(asset_address, owner_version);
+CREATE INDEX idx_build_request ON build_request(asset_address, owner_version);
 
 CREATE TABLE publishing (
     id BIGSERIAL PRIMARY KEY,

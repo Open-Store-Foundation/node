@@ -158,8 +158,8 @@ class EnvGenerator:
         return {
             "bsctest": {
                 "CHAIN_ID": "97",
-                "ORACLE_ADDRESS": "0F61D8D6c9D6886ac7cba72716E1b98C4379E0f7",
-                "STORE_ADDRESS": "6Edac88EA58168a47ab61836bCbAD0Ac844498A6", 
+                "ORACLE_ADDRESS": "CA21F6ab7D9Cf14444028394016066778Cbe1B4B",
+                "STORE_ADDRESS": "0165878A594ca255338adfa4d48449f69242Eb8F",
                 "HISTORICAL_SYNC_BLOCK": "70385278",
                 "HISTORICAL_SYNC_THRESHOLD": "500",
                 "CONFIRM_COUNT": "1",
