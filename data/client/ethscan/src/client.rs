@@ -1,8 +1,10 @@
-use tracing::info;
+use reqwest::StatusCode;
+use tracing::{error, info};
 use crate::error::EthScanError;
 use crate::models::{GetLogsParams, LogsResponse};
 use net_client::http::HttpClient;
 use url::Url;
+use core_std::trier::SyncTrier;
 
 pub struct EthScanClient {
     client: HttpClient,
@@ -23,6 +25,7 @@ impl EthScanClient {
     }
 
     pub async fn get_logs(&self, params: &GetLogsParams) -> Result<LogsResponse, EthScanError> {
+        let mut sync = SyncTrier::new(3, 1.0, 2); // TODO use tower
         let mut url = Url::parse(&self.base_url)?;
 
         url.query_pairs_mut()
@@ -56,22 +59,45 @@ impl EthScanClient {
             url.query_pairs_mut()
                 .append_pair("offset", &offset.to_string());
         }
-        
-        info!("Requesting logs from EthScan: {:?}", url.to_string());
-        let logs_response = self.client
-            .get(&url.to_string())
-            .send()
-            .await?
-            .json::<LogsResponse>()
-            .await?;
 
-        if logs_response.status != "0" && logs_response.status != "1" {
-            return Err(EthScanError::ApiError {
-                status: logs_response.status,
-                message: logs_response.message,
-            });
+        loop {
+            sync.iterate().await;
+
+            info!("Requesting logs from EthScan: {:?}", url.to_string());
+
+            let result = self.client
+                .get(&url.to_string())
+                .send()
+                .await?;
+
+            if result.status() != StatusCode::OK {
+                if sync.is_last() {
+                    return Err(EthScanError::ApiError {
+                        status: result.status().to_string(),
+                        message: result.text().await?,
+                    });
+                }
+
+                error!(
+                    "Error while requesting logs from EthScan: {}. Response: {}",
+                    result.status(),
+                    result.text().await?
+                );
+
+                continue;
+            }
+
+            let log_response = result.json::<LogsResponse>()
+                .await?;
+
+            if log_response.status != "0" && log_response.status != "1" {
+                return Err(EthScanError::ApiError {
+                    status: log_response.status,
+                    message: log_response.message,
+                });
+            }
+
+            return Ok(log_response)
         }
-        
-        Ok(logs_response)
     }
 }

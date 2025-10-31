@@ -221,7 +221,7 @@ impl BlockFinalizedHandler {
             art_to_insert.push(art);
         }
 
-        let mut sync = SyncTrier::new(1_000, 1.0, 3);
+        let mut sync = SyncTrier::new(1, 1.0, 3);
 
         'retrier: while sync.iterate().await {
             if let Ok(transaction) = self.obj_repo.start().await {

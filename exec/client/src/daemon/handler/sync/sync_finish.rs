@@ -96,7 +96,7 @@ impl SyncFinishedHandler {
             status,
         };
 
-        let mut sync = SyncTrier::new(1_000, 1.0, 2);
+        let mut sync = SyncTrier::new(1, 1.0, 2);
         while sync.iterate().await {
             let result = self.assetlink_repo
                 .insert_assetlink_status(&verification)

@@ -70,7 +70,7 @@ impl AddToTrack {
     ) {
         info!("[ADD_TO_TRACK] Handling log: target - {} | track - {} | version - {}!", target.checksum(), track_id, version_code);
 
-        let mut sync = SyncTrier::new(1_000, 1.0, 2);
+        let mut sync = SyncTrier::new(1, 1.0, 2);
         while sync.iterate().await {
             let publish = self.factory.create_publishing(
                 target,

@@ -1471,6 +1471,7 @@ name = "client_ethscan"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "core_std",
  "net_client",
  "reqwest",
  "serde",

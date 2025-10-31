@@ -24,7 +24,7 @@ use net_client::node::result::EthError;
 use net_client::node::watcher::TxWorkaround;
 use client_ethscan::client::EthScanClient;
 use client_ethscan::error::EthScanError;
-use client_ethscan::models::GetLogsParams;
+use client_ethscan::models::{GetLogsParams, LogsResponse};
 use service_graph::client::GraphClient;
 use service_sc::assetlinks::ScAssetLinkService;
 use service_sc::store::ScStoreService;
@@ -40,6 +40,7 @@ pub struct ChainSyncHandlerV0 {
     store_created_block: u64,
     retry_timeout: Duration,
     empty_timeout: Duration,
+    page_timeout: Duration,
     eth: Arc<Web3Provider>,
     log_client: Arc<EventLogService>,
 	graph: Arc<GraphClient>,
@@ -61,7 +62,18 @@ impl ChainSyncHandlerV0 {
         sync_finished: Arc<SyncFinishedHandlerV0>,
         new_request: Arc<NewRequestHandlerV0>,
     ) -> Self {
-		Self { store_created_block, retry_timeout, empty_timeout, eth, log_client, graph, data_sync, sync_finished, new_request }
+		Self {
+            store_created_block,
+            retry_timeout,
+            empty_timeout,
+            eth,
+            log_client,
+            graph,
+            data_sync,
+            sync_finished,
+            new_request,
+            page_timeout: Duration::from_millis(1_000)
+        } // TODO page_timeout to config
     }
 
     pub async fn handle(&self, ctx: Arc<DaemonContex>) {
@@ -177,8 +189,8 @@ impl ChainSyncHandlerV0 {
                     break;
                 }
 
-                // TODO sleep for 1 sec
                 page += 1;
+                sleep(self.page_timeout).await;
             }
 
             page = 1;
@@ -190,7 +202,6 @@ impl ChainSyncHandlerV0 {
                     Ok(response) => response,
                     Err(err) => {
                         error!("[DAEMON_SYNC] Error getting OPENSTORE logs: {}", err);
-                        tg_msg!(format!("[DAEMON_SYNC] Error getting OPENSTORE logs: {}", err));
                         sleep(self.retry_timeout).await;
                         continue;
                     }
@@ -207,8 +218,8 @@ impl ChainSyncHandlerV0 {
                     break;
                 }
 
-                // TODO sleep for 1 sec
                 page += 1;
+                sleep(self.page_timeout).await;
             }
 
             for log in logs.iter() {

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+core_std = { workspace = true }
 net_client = { workspace = true }
 
 tracing = { workspace = true }
