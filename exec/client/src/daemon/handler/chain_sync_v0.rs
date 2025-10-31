@@ -172,7 +172,6 @@ impl ChainSyncHandlerV0 {
                     Ok(response) => response,
                     Err(err) => {
                         error!("[DAEMON_SYNC] Error getting ASSETS logs: {}", err);
-                        tg_msg!(format!("[DAEMON_SYNC] Error getting ASSETS logs: {}", err));
                         sleep(self.retry_timeout).await;
                         continue;
                     }
